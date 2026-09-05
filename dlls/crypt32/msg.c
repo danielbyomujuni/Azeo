@@ -1103,6 +1103,87 @@ typedef enum {
     Verify
 } SignOrVerify;
 
+/* A signature over authenticated attributes is computed on the encoded
+ * attributes as they appear in the message, with the [0] tag replaced by
+ * SET OF, even if the set is not sorted according to DER rules. Encode the
+ * attributes preserving their original order rather than re-sorting them,
+ * so that such signatures verify. */
+static BOOL CRYPT_EncodeAuthAttrsForVerify(const CRYPT_ATTRIBUTES *attrs,
+ BYTE **ret_data, DWORD *ret_size)
+{
+    DWORD i, size = 0, total;
+    BYTE *data, *ptr;
+    BOOL ret = TRUE;
+
+    for (i = 0; ret && i < attrs->cAttr; i++)
+    {
+        DWORD attrSize = 0;
+
+        ret = CryptEncodeObjectEx(X509_ASN_ENCODING, PKCS_ATTRIBUTE,
+         &attrs->rgAttr[i], 0, NULL, NULL, &attrSize);
+        size += attrSize;
+    }
+    if (!ret)
+        return FALSE;
+
+    if (size < 0x80) total = 1 + 1 + size;
+    else if (size < 0x100) total = 1 + 2 + size;
+    else if (size < 0x10000) total = 1 + 3 + size;
+    else if (size < 0x1000000) total = 1 + 4 + size;
+    else total = 1 + 5 + size;
+    if (!(data = CryptMemAlloc(total)))
+    {
+        SetLastError(ERROR_OUTOFMEMORY);
+        return FALSE;
+    }
+    ptr = data;
+    *ptr++ = 0x31; /* SET OF */
+    if (size < 0x80)
+        *ptr++ = size;
+    else if (size < 0x100)
+    {
+        *ptr++ = 0x81;
+        *ptr++ = size;
+    }
+    else if (size < 0x10000)
+    {
+        *ptr++ = 0x82;
+        *ptr++ = size >> 8;
+        *ptr++ = size;
+    }
+    else if (size < 0x1000000)
+    {
+        *ptr++ = 0x83;
+        *ptr++ = size >> 16;
+        *ptr++ = size >> 8;
+        *ptr++ = size;
+    }
+    else
+    {
+        *ptr++ = 0x84;
+        *ptr++ = size >> 24;
+        *ptr++ = size >> 16;
+        *ptr++ = size >> 8;
+        *ptr++ = size;
+    }
+    for (i = 0; ret && i < attrs->cAttr; i++)
+    {
+        DWORD attrSize = total - (ptr - data);
+
+        ret = CryptEncodeObjectEx(X509_ASN_ENCODING, PKCS_ATTRIBUTE,
+         &attrs->rgAttr[i], 0, NULL, ptr, &attrSize);
+        ptr += attrSize;
+    }
+    if (!ret)
+    {
+        CryptMemFree(data);
+        return FALSE;
+    }
+    *ret_data = data;
+    *ret_size = total;
+    return TRUE;
+}
+
 static BOOL CSignedMsgData_UpdateAuthenticatedAttributes(
  CSignedMsgData *msg_data, SignOrVerify flag)
 {
@@ -1131,7 +1212,23 @@ static BOOL CSignedMsgData_UpdateAuthenticatedAttributes(
                     ret = CSignedMsgData_AppendMessageDigestAttribute(msg_data,
                      i);
             }
-            if (ret)
+            if (ret && flag == Verify)
+            {
+                BYTE *encodedAttrs;
+                DWORD size;
+
+                ret = CRYPT_EncodeAuthAttrsForVerify(
+                 &msg_data->info->rgSignerInfo[i].AuthAttrs, &encodedAttrs,
+                 &size);
+                if (ret)
+                {
+                    ret = CryptHashData(
+                     msg_data->signerHandles[i].authAttrHash, encodedAttrs,
+                     size, 0);
+                    CryptMemFree(encodedAttrs);
+                }
+            }
+            else if (ret)
             {
                 LPBYTE encodedAttrs;
                 DWORD size;
@@ -3252,10 +3349,7 @@ static BOOL CDecodeSignedMsg_GetParam(CDecodeMsg *msg, DWORD dwParamType,
             if (dwIndex >= msg->u.signed_data.info->cSignerInfo)
                 SetLastError(CRYPT_E_INVALID_INDEX);
             else if (!msg->u.signed_data.info->rgSignerInfo[dwIndex].AuthAttrs.cAttr)
-            {
-                *pcbData = 0;
                 SetLastError(CRYPT_E_ATTRIBUTES_MISSING);
-            }
             else
                 ret = CRYPT_CopyAttr(pvData, pcbData,
                  &msg->u.signed_data.info->rgSignerInfo[dwIndex].AuthAttrs);
@@ -3269,10 +3363,7 @@ static BOOL CDecodeSignedMsg_GetParam(CDecodeMsg *msg, DWORD dwParamType,
             if (dwIndex >= msg->u.signed_data.info->cSignerInfo)
                 SetLastError(CRYPT_E_INVALID_INDEX);
             else if (!msg->u.signed_data.info->rgSignerInfo[dwIndex].UnauthAttrs.cAttr)
-            {
-                *pcbData = 0;
                 SetLastError(CRYPT_E_ATTRIBUTES_MISSING);
-            }
             else
                 ret = CRYPT_CopyAttr(pvData, pcbData,
                  &msg->u.signed_data.info->rgSignerInfo[dwIndex].UnauthAttrs);
