@@ -123,7 +123,7 @@ void fatal_error( const char *err, ... )
     va_list args;
 
     va_start( args, err );
-    fprintf( stderr, "wineserver: " );
+    fprintf( stderr, "azeoserver: " );
     vfprintf( stderr, err, args );
     va_end( args );
     exit(1);
@@ -529,7 +529,7 @@ static void master_socket_poll_event( struct fd *fd, int event )
     if (event & (POLLERR | POLLHUP))
     {
         /* this is not supposed to happen */
-        fprintf( stderr, "wineserver: Error on master socket\n" );
+        fprintf( stderr, "azeoserver: Error on master socket\n" );
         set_fd_events( sock->fd, -1 );
     }
     else if (event & POLLIN)
@@ -887,7 +887,7 @@ static void close_socket_timeout( void *arg )
 {
     master_timeout = NULL;
     flush_registry();
-    if (debug_level) fprintf( stderr, "wineserver: exiting (pid=%ld)\n", (long) getpid() );
+    if (debug_level) fprintf( stderr, "azeoserver: exiting (pid=%ld)\n", (long) getpid() );
 
 #ifdef DEBUG_OBJECTS
     close_objects();  /* shut down everything properly */

@@ -1,23 +1,23 @@
-.TH WINE 1 "juillet 2013" "@PACKAGE_STRING@" "Windows sur Unix"
+.TH AZEO 1 "juillet 2013" "@PACKAGE_STRING@" "Windows sur Unix"
 .SH NOM
-wine \- exécuter des programmes Windows sur Unix
+azeo \- exécuter des programmes Windows sur Unix
 .SH SYNOPSIS
-.B wine
+.B azeo
 .IR "programme " [ arguments ]
 .br
-.B wine --help
+.B azeo --help
 .br
-.B wine --version
+.B azeo --version
 .PP
 Pour des instructions sur le passage d'arguments aux programmes Windows, veuillez lire la section
 .B PROGRAMME/ARGUMENTS
 de la page de manuel.
 .SH DESCRIPTION
-.B wine
+.B azeo
 charge et exécute le programme indiqué, qui peut être un exécutable DOS, Windows
 3.x, Win32 ou Win64 (sur les systèmes 64 bits).
 .PP
-Pour déboguer wine, utilisez plutôt
+Pour déboguer azeo, utilisez plutôt
 .BR winedbg .
 .PP
 Pour exécuter des applications en ligne de commande (programmes Windows
@@ -29,7 +29,7 @@ Si vous n'utilisez pas
 pour les programmes en ligne de commande, le support console sera très limité et votre
 programme pourrait ne pas fonctionner correctement.
 .PP
-Lorsque wine est invoqué avec
+Lorsque azeo est invoqué avec
 .B --help
 ou
 .B --version
@@ -42,50 +42,50 @@ ou au format Unix
 .RI ( /msdos/windows/sol.exe ).
 Vous pouvez passer des arguments au programme exécuté en les ajoutant
 à la fin de la ligne de commande invoquant
-.B wine
-(par exemple : \fIwine notepad C:\(rs\(rsTEMP\(rs\(rsLISEZMOI.TXT\fR).
+.B azeo
+(par exemple : \fIazeo notepad C:\(rs\(rsTEMP\(rs\(rsLISEZMOI.TXT\fR).
 Notez que vous devrez protéger les caractères spéciaux (et les espaces)
-en utilisant un '\(rs' lorsque vous invoquez Wine depuis
+en utilisant un '\(rs' lorsque vous invoquez Azeo depuis
 un shell, par exemple :
 .PP
-wine C:\(rs\(rsProgram\(rs Files\(rs\(rsMonProg\(rs\(rstest.exe
+azeo C:\(rs\(rsProgram\(rs Files\(rs\(rsMonProg\(rs\(rstest.exe
 .PP
-Il peut également s'agir d'un des exécutables Windows livrés avec Wine,
+Il peut également s'agir d'un des exécutables Windows livrés avec Azeo,
 auquel cas la spécification d'un chemin complet n'est pas obligatoire,
-p.ex. \fIwine explorer\fR ou \fIwine notepad\fR.
+p.ex. \fIazeo explorer\fR ou \fIazeo notepad\fR.
 .PP
 .SH ENVIRONNEMENT
-.B wine
+.B azeo
 passe les variables d'environnement du shell depuis lequel il
 est lancé au processus Windows/DOS exécuté. Utilisez donc la syntaxe appropriée
 à votre shell pour déclarer les variables d'environnement dont vous avez besoin.
 .TP
 .B WINEPREFIX
 Si définie, le contenu de cette variable est pris comme le nom du répertoire où
-Wine stocke ses données (la valeur par défaut est
+Azeo stocke ses données (la valeur par défaut est
 .IR $HOME/.wine ).
 Ce répertoire est également utilisé pour identifier le socket utilisé pour
 communiquer avec
-.BR wineserver .
+.BR azeoserver .
 Tous les processus
-.B wine
+.B azeo
 utilisant le même
-.B wineserver
+.B azeoserver
 (c'est-à-dire le même utilisateur) partagent certains éléments comme la base de registre,
 la mémoire partagée et les objets du noyau.
 En donnant à
 .B WINEPREFIX
 une valeur spécifique pour différents processus
-.BR wine ,
+.BR azeo ,
 il est possible d'exécuter plusieurs sessions de
-.B wine
+.B azeo
 totalement indépendantes.
 .TP
 .B WINESERVER
 Spécifie le chemin et le nom de l'exécutable
-.BR wineserver .
-Si cette variable n'est pas définie, Wine essaiera de charger un
-fichier nommé « wineserver » dans le chemin système ou quelques autres
+.BR azeoserver .
+Si cette variable n'est pas définie, Azeo essaiera de charger un
+fichier nommé « azeoserver » dans le chemin système ou quelques autres
 emplacements potentiels.
 .TP
 .B WINEDEBUG
@@ -103,7 +103,7 @@ ou
 .BR trace .
 Si elle n'est pas spécifiée, tous les messages de débogage pour le canal
 associé seront activés. Chaque canal imprimera des messages à propos
-d'un composant particulier de Wine.
+d'un composant particulier de Azeo.
 Le caractère suivant peut être \fB+\fR ou \fB-\fR pour activer/désactiver
 le canal spécifié. Si aucune
 .I classe
@@ -128,12 +128,12 @@ activera tous les messages du canal relay (appels de l'API).
 WINEDEBUG=relay
 activera tous les messages du canal relay. Pour un contrôle plus fin sur l'inclusion et
 l'exclusion des fonctions et DLL des traces relay, utilisez la clé
-.B HKEY_CURRENT_USER\\\\Software\\\\Wine\\\\Debug
+.B HKEY_CURRENT_USER\\\\Software\\\\Azeo\\\\Debug
 de la base de registre.
 .PP
 Pour plus d'informations sur les messages de débogage, référez-vous au chapitre
-.I Exécution de Wine
-du guide de l'utilisateur de Wine.
+.I Exécution de Azeo
+du guide de l'utilisateur de Azeo.
 .RE
 .TP
 .B WINEDLLPATH
@@ -141,14 +141,14 @@ Spécifie le(s) chemin(s) où chercher les DLL intégrées et les applications
 Winelib. C'est une liste de répertoires séparés par des « : ». En plus des
 répertoires spécifiés dans
 .BR WINEDLLPATH ,
-Wine utilisera aussi le répertoire d'installation.
+Azeo utilisera aussi le répertoire d'installation.
 .TP
 .B WINEDLLOVERRIDES
 Définit le type de remplacement et l'ordre de chargement des DLL utilisées lors du
 processus de chargement d'une DLL. Deux types de bibliothèques peuvent actuellement
 être chargés dans l'espace d'adressage d'un processus : les DLL natives de
 Windows
-.RI ( native ") et les DLL intégrées à Wine (" builtin ).
+.RI ( native ") et les DLL intégrées à Azeo (" builtin ).
 Le type peut être abrégé avec la première lettre du type
 .RI ( n " ou " b ).
 La bibliothèque peut également être désactivée (''). Les séquences d'ordres
@@ -196,9 +196,9 @@ Spécifie l'architecture Windows à prendre en charge. Peut être
 .B win64
 (prise en charge des applications 64 bits, et 32 bits en mode WoW64).
 .br
-L'architecture prise en charge par un préfixe Wine donné est déterminée
+L'architecture prise en charge par un préfixe Azeo donné est déterminée
 au moment de sa création et ne peut être modifiée ultérieurement.
-Si vous exécutez Wine avec un préfixe préexistant, il refusera de démarrer
+Si vous exécutez Azeo avec un préfixe préexistant, il refusera de démarrer
 si
 .B WINEARCH
 ne correspond pas à l'architecture du préfixe.
@@ -221,17 +221,17 @@ Définit le périphérique pour le séquenceur MIDI, par défaut
 .IR /dev/sequencer .
 .SH FICHIERS
 .TP
-.I wine
-Le chargeur de programme de Wine.
+.I azeo
+Le chargeur de programme de Azeo.
 .TP
 .I wineconsole
-Le chargeur de programme de Wine pour les applications en mode console (CUI).
+Le chargeur de programme de Azeo pour les applications en mode console (CUI).
 .TP
-.I wineserver
-Le serveur Wine.
+.I azeoserver
+Le serveur Azeo.
 .TP
 .I winedbg
-Le débogueur de Wine.
+Le débogueur de Azeo.
 .TP
 .I $WINEPREFIX/dosdevices
 Répertoire contenant le mapping des périphériques DOS. Chaque fichier dans ce
@@ -246,12 +246,12 @@ DOS peut être spécifié de la même façon, à l'exception du fait qu'il faut 
 la place de « : ». Dans l'exemple précédent, si le lecteur CDROM est monté depuis /dev/hdc,
 le lien symbolique correspondant sera \fI$WINEPREFIX/dosdevices/d::\fR -> \fI/dev/hdc\fR.
 .SH AUTEURS
-Wine est disponible grâce au travail de nombreux développeurs. Pour une liste
+Azeo est disponible grâce au travail de nombreux développeurs. Pour une liste
 des auteurs, référez-vous au fichier
 .I AUTHORS
 à la racine de la distribution des sources.
 .SH COPYRIGHT
-Wine peut être distribué selon les termes de la licence LGPL. Une copie de cette
+Azeo peut être distribué selon les termes de la licence LGPL. Une copie de cette
 licence se trouve dans le fichier
 .I COPYING.LIB
 à la racine de la distribution des sources.
@@ -259,24 +259,24 @@ licence se trouve dans le fichier
 .PP
 Un rapport sur la compatibilité de nombreuses applications est disponible sur la
 .UR https://appdb.winehq.org
-.B base de données d'applications de Wine
+.B base de données d'applications de Azeo
 .UE .
 N'hésitez pas à y ajouter des entrées pour les applications que vous
 exécutez actuellement, si nécessaire.
 .PP
 Les bugs peuvent être signalés (en anglais) sur le
 .UR https://bugs.winehq.org
-.B système de suivi des problèmes de Wine
+.B système de suivi des problèmes de Azeo
 .UE .
 .SH DISPONIBILITÉ
-La version publique la plus récente de Wine est disponible sur WineHQ, le
+La version publique la plus récente de Azeo est disponible sur WineHQ, le
 .UR https://www.winehq.org/
-.B quartier général du développement de Wine
+.B quartier général du développement de Azeo
 .UE .
 .SH "VOIR AUSSI"
-.BR wineserver (1),
+.BR azeoserver (1),
 .BR winedbg (1),
 .br
 .UR https://www.winehq.org/help
-.B Documentation et support de Wine
+.B Documentation et support de Azeo
 .UE .

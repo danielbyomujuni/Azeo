@@ -1,30 +1,30 @@
-.TH WINE 1 "July 2013" "@PACKAGE_STRING@" "Windows On Unix"
+.TH AZEO 1 "July 2013" "@PACKAGE_STRING@" "Windows On Unix"
 .SH NAME
-wine \- run Windows programs on Unix
+azeo \- run Windows programs on Unix
 .SH SYNOPSIS
-.B wine
+.B azeo
 .IR "program " [ arguments ]
 .br
-.B wine --help
+.B azeo --help
 .br
-.B wine --version
+.B azeo --version
 .PP
 For instructions on passing arguments to Windows programs, please see the
 .B PROGRAM/ARGUMENTS
 section of the man page.
 .SH DESCRIPTION
-.B wine
+.B azeo
 loads and runs the given program, which can be a DOS, Windows
 3.x, Win32 or Win64 executable (on 64-bit systems).
 .PP
-For debugging wine, use
+For debugging azeo, use
 .B winedbg
 instead.
 .PP
 For running CUI executables (Windows console programs), use
 .B wineconsole
 instead of
-.BR wine .
+.BR azeo .
 This will display the output in a separate window. Not using
 .B wineconsole
 for CUI programs will only provide very limited console support, and your
@@ -35,7 +35,7 @@ When invoked with
 or
 .B --version
 as the only argument,
-.B wine
+.B azeo
 will simply print a small help message or its version respectively and exit.
 .SH PROGRAM/ARGUMENTS
 The program name may be specified in DOS format
@@ -44,48 +44,48 @@ or in Unix format
 .RI ( /msdos/windows/sol.exe ).
 You may pass arguments to the program being executed by adding them to the
 end of the command line invoking
-.B wine
-(such as: \fIwine notepad C:\(rs\(rsTEMP\(rs\(rsREADME.TXT\fR).
-Note that you need to '\(rs' escape special characters (and spaces) when invoking Wine via
+.B azeo
+(such as: \fIazeo notepad C:\(rs\(rsTEMP\(rs\(rsREADME.TXT\fR).
+Note that you need to '\(rs' escape special characters (and spaces) when invoking Azeo via
 a shell, e.g.
 .PP
-wine C:\(rs\(rsProgram\(rs Files\(rs\(rsMyPrg\(rs\(rstest.exe
+azeo C:\(rs\(rsProgram\(rs Files\(rs\(rsMyPrg\(rs\(rstest.exe
 .PP
-It can also be one of the Windows executables shipped with Wine, in
+It can also be one of the Windows executables shipped with Azeo, in
 which case specifying the full path is not mandatory, e.g. \fIwine
-explorer\fR or \fIwine notepad\fR.
+explorer\fR or \fIazeo notepad\fR.
 .PP
 .SH ENVIRONMENT
-.B wine
+.B azeo
 makes the environment variables of the shell from which it
 is started accessible to the Windows/DOS processes started. So use the
 appropriate syntax for your shell to enter environment variables you need.
 .TP 
 .B WINEPREFIX
 If set, the contents of this variable is taken as the name of the directory where
-Wine stores its data (the default is
+Azeo stores its data (the default is
 .IR $HOME/.wine ).
 This directory is also used to identify the socket which is used to
 communicate with the
-.BR wineserver .
+.BR azeoserver .
 All 
-.B wine
+.B azeo
 processes using the same 
-.B wineserver
+.B azeoserver
 (i.e.: same user) share certain things like registry, shared memory,
 and config file.
 By setting 
 .B WINEPREFIX
 to different values for different 
-.B wine
+.B azeo
 processes, it is possible to run a number of truly independent 
-.B wine
+.B azeo
 processes. 
 .TP
 .B WINESERVER
 Specifies the path and name of the
-.B wineserver
-binary. If not set, Wine will look for a file named "wineserver" in
+.B azeoserver
+binary. If not set, Azeo will look for a file named "azeoserver" in
 the path and in a few other likely locations.
 .TP
 .B WINEDEBUG
@@ -105,7 +105,7 @@ If
 .I class
 is not specified, all debugging messages for the specified
 channel are turned on.  Each channel will print messages about a particular
-component of Wine.
+component of Azeo.
 The following character can be either \fB+\fR or \fB-\fR to switch the specified
 channel on or off respectively.  If there is no
 .I class
@@ -130,12 +130,12 @@ on all relay messages (API calls).
 WINEDEBUG=relay
 will turn on all relay messages. For more control on including or excluding
 functions and dlls from the relay trace, look into the
-.B HKEY_CURRENT_USER\\\\Software\\\\Wine\\\\Debug
+.B HKEY_CURRENT_USER\\\\Software\\\\Azeo\\\\Debug
 registry key.
 .PP
 For more information on debugging messages, see the
-.I Running Wine
-chapter of the Wine User Guide.
+.I Running Azeo
+chapter of the Azeo User Guide.
 .RE
 .TP
 .B WINEDLLPATH
@@ -143,13 +143,13 @@ Specifies the path(s) in which to search for builtin dlls and Winelib
 applications. This is a list of directories separated by ":". In
 addition to any directory specified in
 .BR WINEDLLPATH ,
-Wine will also look in the installation directory.
+Azeo will also look in the installation directory.
 .TP
 .B WINEDLLOVERRIDES
 Defines the override type and load order of dlls used in the loading
 process for any dll. There are currently two types of libraries that can be loaded
 into a process address space: native windows dlls
-.RI ( native ") and Wine internal dlls (" builtin ).
+.RI ( native ") and Azeo internal dlls (" builtin ).
 The type may be abbreviated with the first letter of the type
 .RI ( n " or " b ).
 The library may also be disabled (''). Each sequence of orders must be separated by commas.
@@ -212,9 +212,9 @@ Specifies the Windows architecture to support. It can be set to
 (support 64-bit applications and 32-bit ones, using a 64-bit host
 process in all cases).
 .br
-The architecture supported by a given Wine prefix is set at prefix
+The architecture supported by a given Azeo prefix is set at prefix
 creation time and cannot be changed afterwards. When running with an
-existing prefix, Wine will refuse to start if
+existing prefix, Azeo will refuse to start if
 .B WINEARCH
 doesn't match the prefix architecture. It is possible however to
 switch freely between \fBwin64\fR and \fBwow64\fR with an existing
@@ -223,7 +223,7 @@ switch freely between \fBwin64\fR and \fBwow64\fR with an existing
 .B WINE_D3D_CONFIG
 Specifies Direct3D configuration options. It can be used instead of
 modifying the
-.B HKEY_CURRENT_USER\\\\Software\\\\Wine\\\\Direct3D
+.B HKEY_CURRENT_USER\\\\Software\\\\Azeo\\\\Direct3D
 registry key. The value is a comma- or semicolon-separated list
 of key-value pairs.
 .RS
@@ -253,17 +253,17 @@ Set the MIDI (sequencer) device. Default
 .IR /dev/sequencer .
 .SH FILES
 .TP
-.I wine
-The Wine program loader.
+.I azeo
+The Azeo program loader.
 .TP
 .I wineconsole
-The Wine program loader for CUI (console) applications.
+The Azeo program loader for CUI (console) applications.
 .TP
-.I wineserver
-The Wine server
+.I azeoserver
+The Azeo server
 .TP
 .I winedbg
-The Wine debugger
+The Azeo debugger
 .TP
 .I $WINEPREFIX/dosdevices
 Directory containing the DOS device mappings. Each file in that
@@ -279,12 +279,12 @@ of ':'. So for the previous example, if the CDROM device is mounted
 from \fI/dev/hdc\fR, the corresponding symlink would be
 \fI$WINEPREFIX/dosdevices/d::\fR -> \fI/dev/hdc\fR.
 .SH AUTHORS
-Wine is available thanks to the work of many developers. For a listing
+Azeo is available thanks to the work of many developers. For a listing
 of the authors, please see the file
 .I AUTHORS
 in the top-level directory of the source distribution.
 .SH COPYRIGHT
-Wine can be distributed under the terms of the LGPL license. A copy of the
+Azeo can be distributed under the terms of the LGPL license. A copy of the
 license is in the file
 .I COPYING.LIB
 in the top-level directory of the source distribution.
@@ -292,26 +292,26 @@ in the top-level directory of the source distribution.
 .PP
 A status report on many applications is available from the
 .UR https://appdb.winehq.org
-.B Wine Application Database
+.B Azeo Application Database
 .UE .
 Please add entries to this list for applications you currently run, if
 necessary.
 .PP
 Bugs can be reported on the
 .UR https://bugs.winehq.org
-.B Wine bug tracker
+.B Azeo bug tracker
 .UE .
 .SH AVAILABILITY
 The most recent public version of 
-.B wine
+.B azeo
 is available through WineHQ, the
 .UR https://www.winehq.org/
-.B Wine development headquarters
+.B Azeo development headquarters
 .UE .
 .SH "SEE ALSO"
-.BR wineserver (1),
+.BR azeoserver (1),
 .BR winedbg (1),
 .br
 .UR https://www.winehq.org/help
-.B Wine documentation and support
+.B Azeo documentation and support
 .UE .

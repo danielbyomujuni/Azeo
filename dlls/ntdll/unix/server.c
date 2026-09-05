@@ -1662,9 +1662,9 @@ size_t server_init_process(void)
         server_protocol_error( "version mismatch %d/%d.\n"
                                "Your %s binary was not upgraded correctly,\n"
                                "or you have an older one somewhere in your PATH.\n"
-                               "Or maybe the wrong wineserver is still running?\n",
+                               "Or maybe the wrong azeoserver is still running?\n",
                                version, SERVER_PROTOCOL_VERSION,
-                               (version > SERVER_PROTOCOL_VERSION) ? "wine" : "wineserver" );
+                               (version > SERVER_PROTOCOL_VERSION) ? "azeo" : "azeoserver" );
 #if defined(__linux__) && defined(HAVE_PRCTL)
     /* work around Ubuntu's ptrace breakage */
     if (server_pid != -1) prctl( 0x59616d61 /* PR_SET_PTRACER */, server_pid );
@@ -1709,7 +1709,7 @@ size_t server_init_process(void)
     if (ret) server_protocol_error( "init_first_thread failed with status %x\n", ret );
 
     if (!supported_machines_count)
-        fatal_error( "'%s' is a 64-bit installation, it cannot be used with a 32-bit wineserver.\n",
+        fatal_error( "'%s' is a 64-bit installation, it cannot be used with a 32-bit azeoserver.\n",
                      config_dir );
 
     native_machine = supported_machines[0];
@@ -1736,7 +1736,7 @@ size_t server_init_process(void)
     for (i = 0; i < supported_machines_count; i++)
         if (supported_machines[i] == current_machine) return info_size;
 
-    fatal_error( "wineserver doesn't support the %04x architecture\n", current_machine );
+    fatal_error( "azeoserver doesn't support the %04x architecture\n", current_machine );
 }
 
 

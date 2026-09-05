@@ -84,7 +84,7 @@ static BOOL is_wine_loader(const WCHAR *module)
 {
     const WCHAR *filename = get_filename(module, NULL);
 
-    return !wcscmp( filename, L"wine" );
+    return !wcscmp( filename, L"azeo" ) || !wcscmp( filename, L"wine" );
 }
 
 static void module_fill_module(const WCHAR* in, WCHAR* out, size_t size)

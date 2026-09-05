@@ -56,10 +56,10 @@ static void usage( FILE *fh )
     fprintf(fh, "   -d[n], --debug[=n]       set debug level to n or +1 if n not specified\n");
     fprintf(fh, "   -f,    --foreground      remain in the foreground for debugging\n");
     fprintf(fh, "   -h,    --help            display this help message\n");
-    fprintf(fh, "   -k[n], --kill[=n]        kill the current wineserver, optionally with signal n\n");
+    fprintf(fh, "   -k[n], --kill[=n]        kill the current azeoserver, optionally with signal n\n");
     fprintf(fh, "   -p[n], --persistent[=n]  make server persistent, optionally for n seconds\n");
     fprintf(fh, "   -v,    --version         display version information and exit\n");
-    fprintf(fh, "   -w,    --wait            wait until the current wineserver terminates\n");
+    fprintf(fh, "   -w,    --wait            wait until the current azeoserver terminates\n");
     fprintf(fh, "\n");
 }
 
@@ -259,7 +259,7 @@ int main( int argc, char *argv[] )
     sock_init();
     open_master_socket();
 
-    if (debug_level) fprintf( stderr, "wineserver: starting (pid=%ld)\n", (long) getpid() );
+    if (debug_level) fprintf( stderr, "azeoserver: starting (pid=%ld)\n", (long) getpid() );
     set_current_time();
     init_signals();
     init_memory();

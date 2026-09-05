@@ -135,7 +135,7 @@ static void handler_poll_event( struct fd *fd, int event )
     if (event & (POLLERR | POLLHUP))
     {
         /* this is not supposed to happen */
-        fprintf( stderr, "wineserver: Error on signal handler pipe\n" );
+        fprintf( stderr, "azeoserver: Error on signal handler pipe\n" );
         release_object( handler );
     }
     else if (event & POLLIN)
@@ -202,7 +202,7 @@ static void do_sigchld( int signum )
 /* SIGSEGV handler */
 static void do_sigsegv( int signum )
 {
-    fprintf( stderr, "wineserver crashed, please enable coredumps (ulimit -c unlimited) and restart.\n");
+    fprintf( stderr, "azeoserver crashed, please enable coredumps (ulimit -c unlimited) and restart.\n");
     abort();
 }
 

@@ -1,19 +1,25 @@
+# Azeo
+
+Azeo is a fork of [Wine](https://www.winehq.org) with additional patches
+for hardware and application support (Moza racing accessories, current
+FL Studio releases, and more).
+
 ## INTRODUCTION
 
-Wine is a program which allows running Microsoft Windows programs
+Azeo is a program which allows running Microsoft Windows programs
 (including DOS, Windows 3.x, Win32, and Win64 executables) on Unix.
 It consists of a program loader which loads and executes a Microsoft
 Windows binary, and a library (called Winelib) that implements Windows
 API calls using their Unix, X11 or Mac equivalents.  The library may also
 be used for porting Windows code into native Unix executables.
 
-Wine is free software, released under the GNU LGPL; see the file
-LICENSE for the details.
+Azeo, like the Wine project it is based on, is free software, released
+under the GNU LGPL; see the file LICENSE for the details.
 
 
 ## QUICK START
 
-From the top-level directory of the Wine source (which contains this file),
+From the top-level directory of the Azeo source (which contains this file),
 run:
 
 ```
@@ -21,26 +27,26 @@ run:
 make
 ```
 
-Then either install Wine:
+Then either install Azeo:
 
 ```
 make install
 ```
 
-Or run Wine directly from the build directory:
+Or run Azeo directly from the build directory:
 
 ```
-./wine notepad
+./azeo notepad
 ```
 
-Run programs as `wine program`. For more information and problem
-resolution, read the rest of this file, the Wine man page, and
+Run programs as `azeo program`. For more information and problem
+resolution, read the rest of this file, the Azeo man page, and
 especially the wealth of information found at https://www.winehq.org.
 
 
 ## REQUIREMENTS
 
-To compile and run Wine, you must have one of the following:
+To compile and run Azeo, you must have one of the following:
 
 - Linux version 2.6.22 or later
 - FreeBSD 12.4 or later
@@ -48,7 +54,7 @@ To compile and run Wine, you must have one of the following:
 - NetBSD-current
 - macOS 10.15 or later
 
-As Wine requires kernel-level thread support to run, only the operating
+As Azeo requires kernel-level thread support to run, only the operating
 systems mentioned above are supported.  Other operating systems which
 support kernel threads may be supported in the future.
 
@@ -56,7 +62,7 @@ support kernel threads may be supported in the future.
   See https://wiki.freebsd.org/Wine for more information.
 
 **Solaris info**:
-  You will most likely need to build Wine with the GNU toolchain
+  You will most likely need to build Azeo with the GNU toolchain
   (gcc, gas, etc.). Warning : installing gas does *not* ensure that it
   will be used by gcc. Recompiling gcc after installing gas or
   symlinking cc, as and ld to the gnu tools is said to be necessary.
@@ -69,7 +75,7 @@ support kernel threads may be supported in the future.
   You need Xcode/Xcode Command Line Tools or Apple cctools.
 
 **Supported file systems**:
-  Wine should run on most file systems. A few compatibility problems
+  Azeo should run on most file systems. A few compatibility problems
   have also been reported using files accessed through Samba. Also,
   NTFS does not provide all the file system features needed by some
   applications.  Using a native Unix file system is recommended.
@@ -90,17 +96,15 @@ support kernel threads may be supported in the future.
 
 ## COMPILATION
 
-To build Wine, do:
+To build Azeo, do:
 
 ```
 ./configure
 make
 ```
 
-This will build the program "wine" and numerous support libraries/binaries.
-The program "wine" will load and run Windows executables.
-The library "libwine" ("Winelib") can be used to compile and link
-Windows source code under Unix.
+This will build the program "azeo" and numerous support libraries/binaries.
+The program "azeo" will load and run Windows executables.
 
 To see compile configuration options, do `./configure --help`.
 
@@ -109,13 +113,13 @@ For more information, see https://gitlab.winehq.org/wine/wine/-/wikis/Building-W
 
 ## SETUP
 
-Once Wine has been built correctly, you can do `make install`; this
-will install the wine executable and libraries, the Wine man page, and
+Once Azeo has been built correctly, you can do `make install`; this
+will install the azeo executable and libraries, the Azeo man page, and
 other needed files.
 
-Don't forget to uninstall any conflicting previous Wine installation
-first.  Try either `dpkg -r wine` or `rpm -e wine` or `make uninstall`
-before installing.
+Don't forget to uninstall any conflicting previous Wine or Azeo
+installation first.  Try either `dpkg -r wine` or `rpm -e wine` or
+`make uninstall` before installing.
 
 Once installed, you can run the `winecfg` configuration tool. See the
 Support area at https://www.winehq.org/ for configuration hints.
@@ -123,46 +127,47 @@ Support area at https://www.winehq.org/ for configuration hints.
 
 ## RUNNING PROGRAMS
 
-When invoking Wine, you may specify the entire path to the executable,
+When invoking Azeo, you may specify the entire path to the executable,
 or a filename only.
 
 For example, to run Notepad:
 
 ```
-wine notepad            (using the search Path as specified in
-wine notepad.exe         the registry to locate the file)
+azeo notepad            (using the search Path as specified in
+azeo notepad.exe         the registry to locate the file)
 
-wine c:\\windows\\notepad.exe      (using DOS filename syntax)
+azeo c:\\windows\\notepad.exe      (using DOS filename syntax)
 
-wine ~/.wine/drive_c/windows/notepad.exe  (using Unix filename syntax)
+azeo ~/.wine/drive_c/windows/notepad.exe  (using Unix filename syntax)
 
-wine notepad.exe readme.txt          (calling program with parameters)
+azeo notepad.exe readme.txt          (calling program with parameters)
 ```
 
-Wine is not perfect, so some programs may crash. If that happens you
+Azeo is not perfect, so some programs may crash. If that happens you
 will get a crash log that you should attach to your report when filing
 a bug.
 
 
 ## GETTING MORE INFORMATION
 
-- **WWW**: A great deal of information about Wine is available from WineHQ at
-	https://www.winehq.org/ : various Wine Guides, application database,
-	bug tracking. This is probably the best starting point.
+- **Azeo**: Development of this fork is hosted at
+	https://github.com/danielbyomujuni/Azeo — report Azeo-specific
+	bugs there.
+
+- **WWW**: A great deal of information about the underlying Wine project is
+	available from WineHQ at https://www.winehq.org/ : various Wine Guides,
+	application database, bug tracking. This is probably the best starting
+	point.
 
 - **FAQ**: The Wine FAQ is located at https://gitlab.winehq.org/wine/wine/-/wikis/FAQ
 
 - **Wiki**: The Wine Wiki is located at https://gitlab.winehq.org/wine/wine/-/wikis/
 
-- **Gitlab**: Wine development is hosted at https://gitlab.winehq.org
+- **Gitlab**: Upstream Wine development is hosted at https://gitlab.winehq.org
 
 - **Mailing lists**:
 	There are several mailing lists for Wine users and developers; see
 	https://gitlab.winehq.org/wine/wine/-/wikis/Forums for more
 	information.
-
-- **Bugs**: Report bugs to Wine Bugzilla at https://bugs.winehq.org
-	Please search the bugzilla database to check whether your
-	problem is already known or fixed before posting a bug report.
 
 - **IRC**: Online help is available at channel `#WineHQ` on irc.libera.chat.

@@ -132,7 +132,7 @@ static void fatal_error( const char *err, ... )
     va_list args;
 
     va_start( args, err );
-    fprintf( stderr, "wine: " );
+    fprintf( stderr, "azeo: " );
     vfprintf( stderr, err, args );
     va_end( args );
     exit(1);
@@ -388,7 +388,7 @@ static void init_paths(void)
 
     if ((build_dir = remove_tail( ntdll_dir, "/dlls/ntdll" )))
     {
-        wineloader = build_path( build_dir, "loader/wine" );
+        wineloader = build_path( build_dir, "loader/azeo" );
         alt_build_dir = realpath_dirname( build_path( build_dir, "loader-wow64" ));
     }
     else
@@ -396,7 +396,7 @@ static void init_paths(void)
         if (!(dll_dir = remove_tail( ntdll_dir, get_so_dir(current_machine) ))) dll_dir = ntdll_dir;
         bin_dir = build_relative_path( dll_dir, LIBDIR "/wine", BINDIR );
         data_dir = build_relative_path( dll_dir, LIBDIR "/wine", DATADIR "/wine" );
-        wineloader = build_path( ntdll_dir, "wine" );
+        wineloader = build_path( ntdll_dir, "azeo" );
     }
 
     set_dll_path();
@@ -427,9 +427,9 @@ char *get_alternate_wineloader( WORD machine )
     }
 
     if (!build_dir)
-        asprintf( &ret, "%s%s/wine", dll_dir, get_so_dir( machine ));
+        asprintf( &ret, "%s%s/azeo", dll_dir, get_so_dir( machine ));
     else if (alt_build_dir)
-        asprintf( &ret, "%s/loader/wine", alt_build_dir );
+        asprintf( &ret, "%s/loader/azeo", alt_build_dir );
 
     return ret;
 }
@@ -508,20 +508,20 @@ static int exec_wineserver( pid_t *pid, char **argv )
     char *path;
 
     if (!is_win64 && alt_build_dir)  /* look for 64-bit server */
-        return build_path_and_exec( pid, alt_build_dir, "server/wineserver", argv );
+        return build_path_and_exec( pid, alt_build_dir, "server/azeoserver", argv );
 
     if (build_dir)
-        return build_path_and_exec( pid, build_dir, "server/wineserver", argv );
+        return build_path_and_exec( pid, build_dir, "server/azeoserver", argv );
 
-    if (!build_path_and_exec( pid, bin_dir, "wineserver", argv )) return 0;
+    if (!build_path_and_exec( pid, bin_dir, "azeoserver", argv )) return 0;
     if ((path = getenv( "WINESERVER" )) && !build_path_and_exec( pid, "", path, argv )) return 0;
 
     if ((path = getenv( "PATH" )))
     {
         for (path = strtok( strdup( path ), ":" ); path; path = strtok( NULL, ":" ))
-            if (!build_path_and_exec( pid, path, "wineserver", argv )) return 0;
+            if (!build_path_and_exec( pid, path, "azeoserver", argv )) return 0;
     }
-    return build_path_and_exec( pid, BINDIR, "wineserver", argv );
+    return build_path_and_exec( pid, BINDIR, "azeoserver", argv );
 }
 
 
@@ -543,7 +543,7 @@ void start_server( BOOL debug )
 
         argv[1] = debug ? debug_flag : NULL;
         argv[2] = NULL;
-        if (exec_wineserver( &pid, argv )) fatal_error( "could not exec wineserver\n" );
+        if (exec_wineserver( &pid, argv )) fatal_error( "could not exec azeoserver\n" );
         waitpid( pid, &status, 0 );
         status = WIFEXITED(status) ? WEXITSTATUS(status) : 1;
         if (status == 2) return;  /* server lock held by someone else, will retry later */
@@ -1500,7 +1500,7 @@ NTSTATUS load_start_exe( UNICODE_STRING *nt_name, void **module )
     status = find_builtin_dll( nt_name, NULL, module, &size, &main_image_info, 0, 0, current_machine, 0, FALSE, 0 );
     if (!NT_SUCCESS(status))
     {
-        MESSAGE( "wine: failed to load start.exe: %x\n", status );
+        MESSAGE( "azeo: failed to load start.exe: %x\n", status );
         NtTerminateProcess( GetCurrentProcess(), status );
     }
     return status;
@@ -2052,14 +2052,14 @@ static void check_command_line( int argc, char *argv[] )
 {
     char *basename;
     static const char usage[] =
-        "Usage: wine PROGRAM [ARGUMENTS...]   Run the specified program\n"
-        "       wine --help                   Display this help and exit\n"
-        "       wine --version                Output version information and exit";
+        "Usage: azeo PROGRAM [ARGUMENTS...]   Run the specified program\n"
+        "       azeo --help                   Display this help and exit\n"
+        "       azeo --version                Output version information and exit";
 
     if ((basename = strrchr( argv[0], '/' ))) basename++;
     else basename = argv[0];
 
-    if (strcmp( basename, "wine" )) /* check if there's a builtin exe corresponding to the base name */
+    if (strcmp( basename, "azeo" )) /* check if there's a builtin exe corresponding to the base name */
     {
         const char *pe_dir = get_pe_dir( current_machine );
         char *exe;

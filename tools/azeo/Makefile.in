@@ -1,0 +1,12 @@
+PROGRAMS = azeo
+
+SOURCES = \
+	azeo.c \
+	azeo.de.UTF-8.man.in \
+	azeo.fr.UTF-8.man.in \
+	azeo.man.in \
+	azeo.pl.UTF-8.man.in
+
+azeo_EXTRADEFS = -DBINDIR="\"${bindir}\"" -DLIBDIR="\"${libdir}\""
+
+INSTALL_LIB = $(PROGRAMS)

@@ -602,7 +602,7 @@ void file_set_error(void)
     case EOVERFLOW: set_error( STATUS_INVALID_PARAMETER ); break;
 #endif
     default:
-        perror("wineserver: file_set_error() can't map error");
+        perror("azeoserver: file_set_error() can't map error");
         set_error( STATUS_UNSUCCESSFUL );
         break;
     }
