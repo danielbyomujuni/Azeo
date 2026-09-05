@@ -24,11 +24,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "initguid.h"
 #include "mountmgr.h"
 #include "winreg.h"
 #include "winnls.h"
 #include "winuser.h"
 #include "dbt.h"
+#include "devguid.h"
+#include "cfgmgr32.h"
+#include "setupapi.h"
 #include "unixlib.h"
 
 #include "wine/list.h"
@@ -2004,6 +2008,188 @@ NTSTATUS WINAPI disk_driver_entry( DRIVER_OBJECT *driver, UNICODE_STRING *path )
 }
 
 
+/* PnP information attached to serial port device objects */
+struct port_device
+{
+    WCHAR bus_id[40];       /* PnP device ID, e.g. USB\VID_1234&PID_5678&MI_00 */
+    WCHAR instance_id[64];
+};
+
+static NTSTATUS WINAPI serial_pnp_dispatch( DEVICE_OBJECT *device, IRP *irp )
+{
+    IO_STACK_LOCATION *stack = IoGetCurrentIrpStackLocation( irp );
+    struct port_device *port = device->DeviceExtension;
+    NTSTATUS status = irp->IoStatus.Status;
+    WCHAR *id = NULL;
+
+    if (stack->MinorFunction == IRP_MN_QUERY_ID && port->bus_id[0])
+    {
+        switch (stack->Parameters.QueryId.IdType)
+        {
+        case BusQueryDeviceID:
+            if ((id = ExAllocatePool( PagedPool, sizeof(port->bus_id) )))
+                wcscpy( id, port->bus_id );
+            break;
+        case BusQueryInstanceID:
+            if ((id = ExAllocatePool( PagedPool, sizeof(port->instance_id) )))
+                wcscpy( id, port->instance_id );
+            break;
+        default:
+            break;
+        }
+        if (id)
+        {
+            irp->IoStatus.Information = (ULONG_PTR)id;
+            status = STATUS_SUCCESS;
+        }
+    }
+
+    irp->IoStatus.Status = status;
+    IoCompleteRequest( irp, IO_NO_INCREMENT );
+    return status;
+}
+
+/* remove enumeration entries for USB serial ports that may no longer be present */
+static void remove_stale_serial_devnodes(void)
+{
+    SP_DEVINFO_DATA sp_device = {sizeof(sp_device)};
+    unsigned int i = 0;
+    HDEVINFO set;
+
+    set = SetupDiGetClassDevsW( &GUID_DEVCLASS_PORTS, L"USB", NULL, 0 );
+    if (set == INVALID_HANDLE_VALUE) return;
+    while (SetupDiEnumDeviceInfo( set, i++, &sp_device ))
+        SetupDiRemoveDevice( set, &sp_device );
+    SetupDiDestroyDeviceInfoList( set );
+}
+
+/* create SetupAPI enumeration entries for a serial port backed by a USB device,
+ * so that applications enumerating ports through SetupDiGetClassDevs() can see
+ * it and identify the underlying USB device */
+static void create_serial_devnode( DEVICE_OBJECT *dev_obj, const char *unix_path, const WCHAR *dos_name )
+{
+    struct created_port
+    {
+        struct list entry;
+        char syspath[256];
+    };
+    static struct list created_ports = LIST_INIT( created_ports );
+
+    struct usb_serial_info info;
+    struct get_usb_serial_info_params params = { unix_path, &info };
+    struct port_device *port = dev_obj->DeviceExtension;
+    SP_DEVINFO_DATA sp_device = {sizeof(sp_device)};
+    WCHAR instance_path[MAX_DEVICE_ID_LEN], buffer[256], desc[150], *p;
+    struct created_port *created;
+    UNICODE_STRING link_name;
+    unsigned int len;
+    HDEVINFO set;
+    HKEY key;
+
+    if (MOUNTMGR_CALL( get_usb_serial_info, &params )) return;
+
+    /* create only one devnode per underlying device, even if multiple COM
+     * ports are mapped to it */
+    LIST_FOR_EACH_ENTRY( created, &created_ports, struct created_port, entry )
+        if (!strcmp( created->syspath, info.syspath )) return;
+    if ((created = malloc( sizeof(*created) )))
+    {
+        lstrcpynA( created->syspath, info.syspath, sizeof(created->syspath) );
+        list_add_tail( &created_ports, &created->entry );
+    }
+
+    if (info.interface_index != -1)
+        swprintf( port->bus_id, ARRAY_SIZE(port->bus_id), L"USB\\VID_%04X&PID_%04X&MI_%02X",
+                  info.vendor, info.product, info.interface_index );
+    else
+        swprintf( port->bus_id, ARRAY_SIZE(port->bus_id), L"USB\\VID_%04X&PID_%04X",
+                  info.vendor, info.product );
+
+    if (info.serial[0])
+    {
+        if (!MultiByteToWideChar( CP_UNIXCP, 0, info.serial, -1,
+                                  port->instance_id, ARRAY_SIZE(port->instance_id) ))
+            port->instance_id[0] = 0;
+        /* keep the instance ID free of path and field separators */
+        for (p = port->instance_id; *p; p++)
+            if (*p == '\\' || *p == '&' || *p == '#' || *p <= ' ') *p = '_';
+    }
+    if (!port->instance_id[0])
+        swprintf( port->instance_id, ARRAY_SIZE(port->instance_id), L"0&%s", dos_name );
+
+    swprintf( instance_path, ARRAY_SIZE(instance_path), L"%s\\%s", port->bus_id, port->instance_id );
+
+    if ((set = SetupDiCreateDeviceInfoList( NULL, NULL )) == INVALID_HANDLE_VALUE) return;
+    if (!SetupDiCreateDeviceInfoW( set, instance_path, &GUID_DEVCLASS_PORTS, NULL, NULL, 0, &sp_device )
+        && !SetupDiOpenDeviceInfoW( set, instance_path, NULL, 0, &sp_device ))
+    {
+        ERR( "Failed to create device %s, error %#lx.\n", debugstr_w(instance_path), GetLastError() );
+        SetupDiDestroyDeviceInfoList( set );
+        return;
+    }
+
+    if (info.interface_index != -1)
+        len = swprintf( buffer, ARRAY_SIZE(buffer), L"USB\\VID_%04X&PID_%04X&REV_%04X&MI_%02X",
+                        info.vendor, info.product, info.revision, info.interface_index ) + 1;
+    else
+        len = swprintf( buffer, ARRAY_SIZE(buffer), L"USB\\VID_%04X&PID_%04X&REV_%04X",
+                        info.vendor, info.product, info.revision ) + 1;
+    len += swprintf( buffer + len, ARRAY_SIZE(buffer) - len, L"%s", port->bus_id ) + 1;
+    buffer[len++] = 0;
+    SetupDiSetDeviceRegistryPropertyW( set, &sp_device, SPDRP_HARDWAREID,
+                                       (BYTE *)buffer, len * sizeof(WCHAR) );
+
+    if (info.interface_index != -1)
+    {
+        len = swprintf( buffer, ARRAY_SIZE(buffer), L"USB\\Class_%02x&SubClass_%02x&Prot_%02x",
+                        info.iface_class, info.iface_subclass, info.iface_protocol ) + 1;
+        len += swprintf( buffer + len, ARRAY_SIZE(buffer) - len, L"USB\\Class_%02x&SubClass_%02x",
+                         info.iface_class, info.iface_subclass ) + 1;
+        len += swprintf( buffer + len, ARRAY_SIZE(buffer) - len, L"USB\\Class_%02x",
+                         info.iface_class ) + 1;
+        buffer[len++] = 0;
+        SetupDiSetDeviceRegistryPropertyW( set, &sp_device, SPDRP_COMPATIBLEIDS,
+                                           (BYTE *)buffer, len * sizeof(WCHAR) );
+    }
+
+    if (!info.product_name[0] || !MultiByteToWideChar( CP_UNIXCP, 0, info.product_name, -1,
+                                                       desc, ARRAY_SIZE(desc) ))
+        wcscpy( desc, L"USB Serial Device" );
+    SetupDiSetDeviceRegistryPropertyW( set, &sp_device, SPDRP_DEVICEDESC,
+                                       (BYTE *)desc, (lstrlenW( desc ) + 1) * sizeof(WCHAR) );
+
+    if (info.manufacturer[0] && MultiByteToWideChar( CP_UNIXCP, 0, info.manufacturer, -1,
+                                                     buffer, ARRAY_SIZE(buffer) ))
+        SetupDiSetDeviceRegistryPropertyW( set, &sp_device, SPDRP_MFG,
+                                           (BYTE *)buffer, (lstrlenW( buffer ) + 1) * sizeof(WCHAR) );
+
+    swprintf( buffer, ARRAY_SIZE(buffer), L"%s (%s)", desc, dos_name );
+    SetupDiSetDeviceRegistryPropertyW( set, &sp_device, SPDRP_FRIENDLYNAME,
+                                       (BYTE *)buffer, (lstrlenW( buffer ) + 1) * sizeof(WCHAR) );
+
+    SetupDiRegisterDeviceInfo( set, &sp_device, 0, NULL, NULL, NULL );
+
+    if ((key = SetupDiCreateDevRegKeyW( set, &sp_device, DICS_FLAG_GLOBAL, 0,
+                                        DIREG_DEV, NULL, NULL )) != INVALID_HANDLE_VALUE)
+    {
+        RegSetValueExW( key, L"PortName", 0, REG_SZ, (const BYTE *)dos_name,
+                        (lstrlenW( dos_name ) + 1) * sizeof(WCHAR) );
+        RegCloseKey( key );
+    }
+
+    SetupDiDestroyDeviceInfoList( set );
+
+    dev_obj->Flags |= DO_BUS_ENUMERATED_DEVICE;
+    if (!IoRegisterDeviceInterface( dev_obj, &GUID_DEVINTERFACE_COMPORT, NULL, &link_name ))
+    {
+        IoSetDeviceInterfaceState( &link_name, TRUE );
+        RtlFreeUnicodeString( &link_name );
+    }
+
+    TRACE( "%s (%s) reported as %s\n", debugstr_w(dos_name), debugstr_a(unix_path),
+           debugstr_w(instance_path) );
+}
+
 /* create a serial or parallel port */
 static BOOL create_port_device( DRIVER_OBJECT *driver, int n, const char *unix_path,
                                 const char *dosdevices_path, HKEY *windows_ports_key )
@@ -2044,12 +2230,13 @@ static BOOL create_port_device( DRIVER_OBJECT *driver, int n, const char *unix_p
     /* create NT device */
     swprintf( nt_buffer, ARRAY_SIZE(nt_buffer), nt_name_format, n - 1 );
     RtlInitUnicodeString( &nt_name, nt_buffer );
-    status = IoCreateDevice( driver, 0, &nt_name, 0, 0, FALSE, &dev_obj );
+    status = IoCreateDevice( driver, sizeof(struct port_device), &nt_name, 0, 0, FALSE, &dev_obj );
     if (status != STATUS_SUCCESS)
     {
         FIXME( "IoCreateDevice %s got %lx\n", debugstr_w(nt_name.Buffer), status );
         return FALSE;
     }
+    memset( dev_obj->DeviceExtension, 0, sizeof(struct port_device) );
     swprintf( symlink_buffer, ARRAY_SIZE(symlink_buffer), symlink_format, n );
     RtlInitUnicodeString( &symlink_name, symlink_buffer );
     IoCreateSymbolicLink( &symlink_name, &nt_name );
@@ -2059,7 +2246,7 @@ static BOOL create_port_device( DRIVER_OBJECT *driver, int n, const char *unix_p
         IoCreateSymbolicLink( &default_name, &symlink_name );
     }
 
-    /* TODO: store information about the Unix device in the NT device */
+    if (driver == serial_driver) create_serial_devnode( dev_obj, unix_path, dos_name );
 
     /* create registry entry */
     if (!*windows_ports_key)
@@ -2149,8 +2336,9 @@ NTSTATUS WINAPI serial_driver_entry( DRIVER_OBJECT *driver, UNICODE_STRING *path
     struct detect_ports_params params = { devices, sizeof(devices) };
 
     serial_driver = driver;
-    /* TODO: fill in driver->MajorFunction */
+    driver->MajorFunction[IRP_MJ_PNP] = serial_pnp_dispatch;
 
+    remove_stale_serial_devnodes();
     MOUNTMGR_CALL( detect_serial_ports, &params );
     create_port_devices( driver, devices );
 

@@ -26,9 +26,11 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <limits.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/stat.h>
 #ifdef HAVE_SYS_STATFS_H
 #include <sys/statfs.h>
@@ -531,6 +533,86 @@ static NTSTATUS detect_parallel_ports( void *args )
     return STATUS_SUCCESS;
 }
 
+#ifdef linux
+static BOOL read_sysfs_string( const char *dir, const char *file, char *buffer, size_t size )
+{
+    char path[PATH_MAX];
+    size_t len;
+    FILE *f;
+
+    if (snprintf( path, sizeof(path), "%s/%s", dir, file ) >= sizeof(path)) return FALSE;
+    if (!(f = fopen( path, "r" ))) return FALSE;
+    if (!fgets( buffer, size, f )) buffer[0] = 0;
+    fclose( f );
+    len = strlen( buffer );
+    while (len && (buffer[len - 1] == '\n' || buffer[len - 1] == '\r')) buffer[--len] = 0;
+    return len != 0;
+}
+
+static BOOL read_sysfs_hex( const char *dir, const char *file, unsigned int *value )
+{
+    char buffer[32];
+
+    if (!read_sysfs_string( dir, file, buffer, sizeof(buffer) )) return FALSE;
+    *value = strtoul( buffer, NULL, 16 );
+    return TRUE;
+}
+#endif
+
+static NTSTATUS get_usb_serial_info( void *args )
+{
+#ifdef linux
+    const struct get_usb_serial_info_params *params = args;
+    struct usb_serial_info *info = params->info;
+    char link[PATH_MAX], path[PATH_MAX], device[PATH_MAX];
+    unsigned int value, i;
+    const char *name;
+
+    memset( info, 0, sizeof(*info) );
+    info->interface_index = -1;
+
+    if (!realpath( params->path, device )) return STATUS_NO_SUCH_DEVICE;
+    if ((name = strrchr( device, '/' ))) name++;
+    else name = device;
+    if (snprintf( link, sizeof(link), "/sys/class/tty/%s/device", name ) >= sizeof(link))
+        return STATUS_NO_SUCH_DEVICE;
+    if (!realpath( link, path )) return STATUS_NO_SUCH_DEVICE;
+
+    /* The tty device is the USB interface itself (cdc-acm) or a child of it
+     * (usb-serial); the USB device is the interface's parent. */
+    for (i = 0; i < 4; i++)
+    {
+        char *end;
+
+        if (info->interface_index == -1 && read_sysfs_hex( path, "bInterfaceNumber", &value ))
+        {
+            info->interface_index = value;
+            if (read_sysfs_hex( path, "bInterfaceClass", &value )) info->iface_class = value;
+            if (read_sysfs_hex( path, "bInterfaceSubClass", &value )) info->iface_subclass = value;
+            if (read_sysfs_hex( path, "bInterfaceProtocol", &value )) info->iface_protocol = value;
+            snprintf( info->syspath, sizeof(info->syspath), "%s", path );
+        }
+        else if (read_sysfs_hex( path, "idVendor", &value ))
+        {
+            info->vendor = value;
+            if (read_sysfs_hex( path, "idProduct", &value )) info->product = value;
+            if (read_sysfs_hex( path, "bcdDevice", &value )) info->revision = value;
+            read_sysfs_string( path, "serial", info->serial, sizeof(info->serial) );
+            read_sysfs_string( path, "manufacturer", info->manufacturer, sizeof(info->manufacturer) );
+            read_sysfs_string( path, "product", info->product_name, sizeof(info->product_name) );
+            if (!info->syspath[0]) snprintf( info->syspath, sizeof(info->syspath), "%s", path );
+            return STATUS_SUCCESS;
+        }
+
+        if (!(end = strrchr( path, '/' ))) break;
+        *end = 0;
+    }
+    return STATUS_NO_SUCH_DEVICE;
+#else
+    return STATUS_NOT_SUPPORTED;
+#endif
+}
+
 static NTSTATUS set_shell_folder( void *args )
 {
     const struct set_shell_folder_params *params = args;
@@ -624,6 +706,7 @@ const unixlib_entry_t __wine_unix_call_funcs[] =
     check_device_access,
     detect_serial_ports,
     detect_parallel_ports,
+    get_usb_serial_info,
     set_shell_folder,
     get_shell_folder,
     dhcp_request,
