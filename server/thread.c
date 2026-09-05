@@ -198,9 +198,9 @@ void init_threading(void)
         setrlimit( RLIMIT_NICE, &rlimit );
         if (rlimit.rlim_max <= 40) nice_limit = 20 - rlimit.rlim_max;
         else if (rlimit.rlim_max == -1) nice_limit = -20;
-        if (nice_limit >= 0 && debug_level) fprintf(stderr, "wine: RLIMIT_NICE is <= 20, unable to use setpriority safely\n");
+        if (nice_limit >= 0 && debug_level) fprintf(stderr, "azeo: RLIMIT_NICE is <= 20, unable to use setpriority safely\n");
     }
-    if (nice_limit < 0 && debug_level) fprintf(stderr, "wine: Using setpriority to control niceness in the [%d,%d] range\n", nice_limit, -nice_limit );
+    if (nice_limit < 0 && debug_level) fprintf(stderr, "azeo: Using setpriority to control niceness in the [%d,%d] range\n", nice_limit, -nice_limit );
 }
 
 static void apply_thread_priority( struct thread *thread )

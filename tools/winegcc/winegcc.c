@@ -133,7 +133,7 @@ static const char* app_loader_template =
     "fi\n"
     "\n"
     "# determine the WINELOADER\n"
-    "if [ ! -x \"$WINELOADER\" ]; then WINELOADER=\"wine\"; fi\n"
+    "if [ ! -x \"$WINELOADER\" ]; then WINELOADER=\"azeo\"; fi\n"
     "\n"
     "# and try to start the app\n"
     "exec \"$WINELOADER\" \"$apppath\" \"$@\"\n"

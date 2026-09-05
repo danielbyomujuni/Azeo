@@ -1,43 +1,43 @@
 .\" -*- nroff -*-
-.TH WINE 1 "November 2007" "@PACKAGE_STRING@" "Windows On Unix"
+.TH AZEO 1 "November 2007" "@PACKAGE_STRING@" "Windows On Unix"
 .SH NAME
-wine \- Windows-Programme auf Unix-Systemen ausführen
+azeo \- Windows-Programme auf Unix-Systemen ausführen
 .SH ÜBERSICHT
-.B wine
+.B azeo
 .IR Programm " [" Argumente ]
 .br
-.B wine --help
+.B azeo --help
 .br
-.B wine --version
+.B azeo --version
 .PP
 Für das Übergeben von Kommandos an Windows-Programme siehe den
 Abschnitt
 .B PROGRAMM/ARGUMENTE
 in dieser Manpage.
 .SH BESCHREIBUNG
-.B wine
+.B azeo
 lädt und führt ein Windows-Programm aus. Dieses Programm kann ein
 beliebiges DOS/Win3.1/Win32-Programm sein; es wird nur die
 x86-Architektur unterstützt.
 .PP
-Um wine zu debuggen, nutzen Sie anstelledessen das Kommando
+Um azeo zu debuggen, nutzen Sie anstelledessen das Kommando
 .BR winedbg .
 .PP
 Um rein kommandozeilenbasierte Programme auszuführen, nutzen Sie
 .B wineconsole
 anstelle von
-.BR wine .
+.BR azeo .
 Wenn Sie nicht
 .B wineconsole
 für CLI-Programme nutzen, kann dies dazu führen, dass das Programm
 nicht korrekt ausgeführt werden kann.
 .PP
-Wenn wine nur mit
+Wenn azeo nur mit
 .B --help
 oder
 .B --version
 als Argument aufgerufen wird, wird
-.B wine
+.B azeo
 nur einen kleinen Hilfetext oder die Version ausgeben und sich beenden.
 .SH PROGRAMM/ARGUMENTE
 Der Programmname kann auf DOS-Art
@@ -45,16 +45,16 @@ Der Programmname kann auf DOS-Art
 oder auf UNIX-Art angegeben werden
 .RI ( /msdos/windows/sol.exe ).
 Sie können Argumente an die Windows-Anwendung übergeben, indem Sie
-sie einfach an den wine-Befehl anhängen (z. B.:
-.IR "wine notepad C:\(rs\(rsTEMP\(rs\(rsREADME.TXT" ).
+sie einfach an den azeo-Befehl anhängen (z. B.:
+.IR "azeo notepad C:\(rs\(rsTEMP\(rs\(rsREADME.TXT" ).
 Sie müssen unter Umständen Sonderzeichen und/oder Leerzeichen
-mit '\(rs' maskieren, wenn Sie wine über die Kommandokonsole aufrufen,
+mit '\(rs' maskieren, wenn Sie azeo über die Kommandokonsole aufrufen,
 z.B.
 .PP
-wine C:\(rs\(rsProgram\(rs Files\(rs\(rsMyPrg\(rs\(rstest.exe
+azeo C:\(rs\(rsProgram\(rs Files\(rs\(rsMyPrg\(rs\(rstest.exe
 .PP
 .SH UMGEBUNGSVARIABLEN
-.B wine
+.B azeo
 leitet die Umgebungsvariablen der Shell, in der es gestartet wurde, an
 die Windows-Applikation weiter. Um eine für Ihre Applikation nötige
 Variable zugänglich zu machen, folgen Sie der Anleitung Ihrer Shell zu
@@ -63,31 +63,31 @@ Umgebungsvariablen.
 .B WINEPREFIX
 Wenn gesetzt, wird dieser Ordner als Speicherort für die
 Konfigurationsdateien von
-.B wine
+.B azeo
 genutzt. Die Standardeinstellung ist
 .IR $HOME/.wine .
 Dieser Ordner wird auch für den UNIX-Socket zur Kommunikation mit
-.IR wineserver .
+.IR azeoserver .
 genutzt. Alle
-.B wine
+.B azeo
 -Prozesse, die den gleichen
-.B wineserver
+.B azeoserver
 nutzen (z.B. Prozesse desselben Nutzers) teilen sich bestimmte Objekte
 wie die Registry, Arbeitsspeicher und die Konfigurationsdateien.  Mit
 dem Setzen von
 .I WINEPREFIX
 beim Starten verschiedener
-.B wine
+.B azeo
 -Prozesse ist es möglich, eine Anzahl vollkommen unabhängiger
-.B wine
+.B azeo
 -Prozesse zu starten.
 .TP
 .B WINESERVER
 Gibt den Ort der
-.B wineserver
+.B azeoserver
 -Anwendung an. Wenn diese Variable nicht gesetzt ist, sucht
-.B wine
-in $PATH und anderen Orten nach wineserver.
+.B azeo
+in $PATH und anderen Orten nach azeoserver.
 .TP
 .B WINEDEBUG
 Wählt die Stufe der Debug-Meldungen aus. Die Variable hat das Format
@@ -105,7 +105,7 @@ Wenn
 .I class
 nicht angegeben ist, werden alle Debugmeldungen dieses Kanals
 ausgegeben. Jeder Kanal gibt Meldungen einer bestimmten
-.BR wine .
+.BR azeo .
 -Komponente aus. Das folgende Zeichen kann entweder + oder - sein, je
 nachdem ob der Kanal ein- oder ausgeschaltet werden soll.  Wenn keine
 .I Klasse
@@ -132,15 +132,15 @@ schaltet alle FIXME-Nachrichten ab, Zeigernachrichten der Kategorie
 WINEDEBUG=relay
 schaltet alle Relay-Nachrichten an. Für mehr Kontrolle über die im
 Relaytrace angezeigten DLLs und Funktionen siehe den [Debug]-Abschnitt
-der Wine-Konfigurationsdatei.
+der Azeo-Konfigurationsdatei.
 .PP
 Für mehr Informationen zu den Debug-Meldungen siehe den Abschnitt
-.I Running Wine
-im Wine-Benutzerhandbuch.
+.I Running Azeo
+im Azeo-Benutzerhandbuch.
 .RE
 .TP
 .B WINEDLLPATH
-Gibt den Pfad/die Pfade an, in denen wine nach eigenen DLLs und
+Gibt den Pfad/die Pfade an, in denen azeo nach eigenen DLLs und
 Winelib-Anwendungen sucht. Die Einträge der Liste werden mit einem ":"
 getrennt.
 .TP
@@ -151,7 +151,7 @@ DLLs, die in den Speicher eines Prozesses geladen werden können:
 Native Windows-DLLs
 .RI ( native ),
 und
-.B wine
+.B azeo
 -interne DLLs
 .RI ( builtin ).
 Der Typ kann mit dem ersten Buchstaben abgekürzt werden
@@ -178,20 +178,20 @@ Beispiele:
 WINEDLLOVERRIDES="comdlg32,shell32=n,b"
 .br
 Versuche, die DLLs comdlg32 und shell32 als native Windows-DLLs zu
-laden; wenn dies fehlschlägt, soll Wine die mitgebrachte Version
+laden; wenn dies fehlschlägt, soll Azeo die mitgebrachte Version
 benutzen.
 .TP
 WINEDLLOVERRIDES="comdlg32,shell32=n;c:\(rs\(rsfoo\(rs\(rsbar\(rs\(rsbaz=b"
 .br
 Versuche, die DLLs comdlg32 und shell32 als native Windows-DLLs zu
 laden. Weiterhin, wenn eine Anwendung versucht, die DLL
-c:\(rsfoo\(rsbar\(rsbaz.dll zu laden, soll wine die eingebaute DLL baz
+c:\(rsfoo\(rsbar\(rsbaz.dll zu laden, soll azeo die eingebaute DLL baz
 verwenden.
 .TP
 WINEDLLOVERRIDES="comdlg32=b,n;shell32=b;comctl32=n"
 .br
 Versuche, die mitgebrachte comdlg32-Bibliothek zu laden; wenn dies
-fehlschlägt soll Wine die native comdlg32-DLL nutzen. Bei shell32 soll
+fehlschlägt soll Azeo die native comdlg32-DLL nutzen. Bei shell32 soll
 immer die mitgebrachte Version verwendet werden; bei comctl32 immer
 die native.
 .RE
@@ -214,24 +214,24 @@ MIDI-Sequencergerät festlegen. Standard:
 .BR /dev/sequencer .
 .SH DATEIEN
 .TP
-.I wine
+.I azeo
 Der
-.B wine
+.B azeo
 -Programmstarter
 .TP
 .I wineconsole
 Der
-.B wine
+.B azeo
 -Programmstarter für Konsolenapplikationen (CLI)
 .TP
-.I wineserver
+.I azeoserver
 Der
-.B wine
+.B azeo
 -Server
 .TP
 .I winedbg
 Der
-.B wine
+.B azeo
 -Debugger
 .TP
 .I $WINEPREFIX/dosdevices
@@ -247,13 +247,13 @@ benötigt. Es kann auch die Unix-Gerätedatei angegeben werden; der
 einzige Unterschied ist der "::" anstelle dem einfachen ":" im Namen:
 $WINEPREFIX/dosdevices/d:: -> /dev/hdc.
 .SH AUTOREN
-.B wine
+.B azeo
 ist dank der Arbeit vieler Entwickler verfügbar. Für eine Liste siehe
 die Datei
 .B AUTHORS
 im obersten Ordner der Quellcodedistribution.
 .SH COPYRIGHT
-.B wine
+.B azeo
 kann unter den Bedingungen der LGPL genutzt werden; für eine Kopie der
 Lizenz siehe die Datei
 .B COPYING.LIB
@@ -262,17 +262,17 @@ im obersten Ordner der Quellcodedistribution.
 .PP
 Statusberichte für viele Anwendungen sind unter
 .I https://appdb.winehq.org
- verfügbar. Bitte fügen Sie Anwendungen, die Sie mit Wine nutzen, der
+ verfügbar. Bitte fügen Sie Anwendungen, die Sie mit Azeo nutzen, der
  Liste hinzu, sofern noch kein Eintrag existiert.
 .PP
 Fehler können unter
 .I https://bugs.winehq.org
 gemeldet werden.
 .SH VERFÜGBARKEIT
-Die aktuellste öffentliche Wine-Version kann auf WineHQ,
+Die aktuellste öffentliche Azeo-Version kann auf WineHQ,
 .UR https://www.winehq.org/
-die Hauptseite der wine-Entwicklung
+die Hauptseite der azeo-Entwicklung
 .UE ,
 bezogen werden.
 .SH "SIEHE AUCH"
-.BR wineserver (1),\  winedbg (1)
+.BR azeoserver (1),\  winedbg (1)

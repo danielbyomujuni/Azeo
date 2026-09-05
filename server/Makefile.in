@@ -1,4 +1,4 @@
-PROGRAMS = wineserver
+PROGRAMS = azeoserver
 
 SOURCES = \
 	alpc.c \
@@ -46,9 +46,9 @@ SOURCES = \
 	unicode.c \
 	user.c \
 	window.c \
-	wineserver.de.UTF-8.man.in \
-	wineserver.fr.UTF-8.man.in \
-	wineserver.man.in \
+	azeoserver.de.UTF-8.man.in \
+	azeoserver.fr.UTF-8.man.in \
+	azeoserver.man.in \
 	winstation.c
 
 UNIX_CFLAGS = $(INOTIFY_CFLAGS)

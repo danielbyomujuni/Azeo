@@ -521,7 +521,7 @@ static void server_shutdown_timeout( void *arg )
     switch(++shutdown_stage)
     {
     case 1:  /* signal system processes to exit */
-        if (debug_level) fprintf( stderr, "wineserver: shutting down\n" );
+        if (debug_level) fprintf( stderr, "azeoserver: shutting down\n" );
         if (shutdown_event) set_event( shutdown_event );
         shutdown_timeout = add_timeout_user( 2 * -TICKS_PER_SEC, server_shutdown_timeout, NULL );
         close_master_socket( 4 * -TICKS_PER_SEC );

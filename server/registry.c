@@ -2112,7 +2112,7 @@ void flush_registry(void)
     {
         if (!save_branch( save_branch_info[i].key, save_branch_info[i].filename ))
         {
-            fprintf( stderr, "wineserver: could not save registry branch to %s",
+            fprintf( stderr, "azeoserver: could not save registry branch to %s",
                      save_branch_info[i].filename );
             perror( " " );
         }

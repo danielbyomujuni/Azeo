@@ -2432,7 +2432,7 @@ static unsigned int sock_get_error( int err )
         case 0:                 return 0;
         default:
             errno = err;
-            perror("wineserver: sock_get_error() can't map error");
+            perror("azeoserver: sock_get_error() can't map error");
             return WSAEFAULT;
     }
 }
@@ -2482,7 +2482,7 @@ static int sock_get_ntstatus( int err )
         case 0:                 return STATUS_SUCCESS;
         default:
             errno = err;
-            perror("wineserver: sock_get_ntstatus() can't map error");
+            perror("azeoserver: sock_get_ntstatus() can't map error");
             return STATUS_UNSUCCESSFUL;
     }
 }

@@ -1,42 +1,42 @@
 .\" -*- nroff -*-
-.TH WINE 1 "October 2005" "@PACKAGE_STRING@" "Windows On Unix"
+.TH AZEO 1 "October 2005" "@PACKAGE_STRING@" "Windows On Unix"
 .SH NAZWA
-wine \- uruchamiaj programy Windowsowe na Uniksie
+azeo \- uruchamiaj programy Windowsowe na Uniksie
 .SH SKŁADNIA
-.B wine
+.B azeo
 .IR program " [" opcje ]
 .br
-.B wine --help
+.B azeo --help
 .br
-.B wine --version
+.B azeo --version
 .PP
 Informacji na temat przekazywania opcji programom Windowsowym szukaj w rozdziale
 .B OPCJE
 tej instrukcji.
 .SH OPIS
-.B wine
+.B azeo
 ładuje i wykonuje dany program, gdzie program to plik wykonywalny DOSa, Windowsa
 3.x lub Win32 (tylko binarne x86).
 .PP
-Do debugowania wine lepiej jednak użyć
+Do debugowania azeo lepiej jednak użyć
 .B winedbg
 .PP
 Do uruchamiania plików wykonywalnych CUI (programy konsolowe Windowsa) używaj
 .B wineconsole
 zamiast
-.BR wine .
+.BR azeo .
 Spowoduje to, że całe wyjście zostanie pokazane w osobnym oknie (wymaganiem jest uruchomiony X11).
 Przez nie użycie
 .B wineconsole
 do programów CUI otrzymasz ograniczone wsparcie dla konsoli
 ,a twój program może nie zadziałać prawidłowo.
 .PP
-Gdy wywołasz wine z
+Gdy wywołasz azeo z
 .B --help
 lub
 .B --version
 jako jedyną opcją,
-.B wine
+.B azeo
 pokaże małą informację pomocy lub odpowiednio wyświetli swoją wersję i zakończy działanie.
 .SH OPCJE
 Nazwa programu może być określona w formacie DOS
@@ -45,45 +45,45 @@ lub w formacie Unix
 .RI ( /msdos/windows/sol.exe ).
 Możesz dodać opcje do wykonywanego programu przez dodanie ich do
 końca wywołania linii wiersza poleceń
-.B wine
-(tak jak np.: wine notepad C:\(rs\(rsTEMP\(rs\(rsREADME.TXT).
-Zauważ, że musisz '\(rs' poradzić sobie ze znakami specjalnymi (i spacjami) podczas wywoływania Wine przez
+.B azeo
+(tak jak np.: azeo notepad C:\(rs\(rsTEMP\(rs\(rsREADME.TXT).
+Zauważ, że musisz '\(rs' poradzić sobie ze znakami specjalnymi (i spacjami) podczas wywoływania Azeo przez
 powłokę, np.
 .PP
-wine C:\(rs\(rsProgram\(rs Files\(rs\(rsMyPrg\(rs\(rstest.exe
+azeo C:\(rs\(rsProgram\(rs Files\(rs\(rsMyPrg\(rs\(rstest.exe
 .PP
 .SH ZMIENNE ŚRODOWISKOWE
-.B wine
+.B azeo
 udostępnia zmienne środowiskowe z powłoki, z której wystartował
-.B wine
+.B azeo
 programom windowsowym/dosowym, więc używaj odpowiedniej składni
 twojej powłoki, aby wpisać zmienne środowiskowe, których potrzebujesz.
 .TP
 .B WINEPREFIX
 Jeżeli ta zmienna jest ustawiona, to jej zawartość jest brana jako nazwa katalogu gdzie
-.B wine
+.B azeo
 przechowuje swoje dane (domyślny katalog to
 .IR $HOME/.wine ).
 Katalog ten jest także wykorzystywany do identyfikacji gniazda używanego do
 porozumiewania się z
-.IR wineserver .
+.IR azeoserver .
 Wszystkie procesy
-.B wine
+.B azeo
 używające tego samego
-.B wineserver
+.B azeoserver
 (np.: ten sam użytkownik) dzielą pewne elementy takie jak rejrestr, współdzielona pamięć,
 i plik konfiguracyjny.
 Poprzez ustawianie
 .I WINEPREFIX
 na inne wartości dla różnych procesów
-.B wine
+.B azeo
 jest możliwe uruchamianie kilka prawdziwie niezależnych procesów
-.BR wine .
+.BR azeo .
 .TP
 .B WINESERVER
 Określa ścieżkę i nazwę programu binarnego
-.B wineserver
-Jeżeli nie ustawione, Wine będzie szukał pliku o nazwie "wineserver" w
+.B azeoserver
+Jeżeli nie ustawione, Azeo będzie szukał pliku o nazwie "azeoserver" w
 podanej ścieżce i kilku innych miejscach prawdopodobnego występowania.
 .TP
 .B WINEDEBUG
@@ -104,7 +104,7 @@ Jeżeli
 nie jest określona, to wszystkie wiadomości debuggera dla określonego
 kanału są wyłączone.  Każdy kanał będzie wyświetlał wiadomości o poszczególnym
 komponencie
-.BR wine .
+.BR azeo .
 Następny znak może być albo + albo - i służy odpowiednio do włączenia albo wyłączenia
 określonego kanału.  Jeżeli nie ma części
 .I klasa
@@ -129,11 +129,11 @@ wszystkie wiadomości relay (wywołania API).
 WINEDEBUG=relay
 włączy wszystkie wiadomości relay. Aby mieć większą kontrolę przy uwzględnianiu i wykluczaniu
 funkcji i bibliotek dll ze śladu relay, zapoznaj się z kluczem rejestru
-.B HKEY_CURRENT_USER\\\\Software\\\\Wine\\\\Debug
+.B HKEY_CURRENT_USER\\\\Software\\\\Azeo\\\\Debug
 .PP
 Informacji na temat wiadomości debugera szukaj w rozdziale
-.I Running Wine
-z Przewodnika użytkownika Wine.
+.I Running Azeo
+z Przewodnika użytkownika Azeo.
 .RE
 .TP
 .B WINEDLLPATH
@@ -141,14 +141,14 @@ Określa ścieżkę/ki, w których należy szukać wbudowanych bibliotek dll i p
 Winelib. To lista katalogów oddzielonych znakiem ":". W dodatku do
 każdego katalogu określonego w
 .IR WINEDLLPATH ,
-Wine będzie także szukał w katalogu instalacyjnym.
+Azeo będzie także szukał w katalogu instalacyjnym.
 .TP
 .B WINEDLLOVERRIDES
 Definiuje typ nadpisania i kolejność ładowania bibliotek dll użytych do ładowania
 procesu dla jakiejkolwiek biblioteki dll. Obecnie istnieją dwa typy bibliotek, które można załadować
 do przestrzeni adresowej procesu: natywne biblioteki Windowsa
 .RI ( native ),
-.B wine
+.B azeo
 wewnętrzne biblioteki dll
 .RI ( builtin ).
 Typ może być skrócony przez pierwszą literkę typu
@@ -196,9 +196,9 @@ Określa jaką architekturę Windowsa wspierać. Może to być zarówno
 .B win64
 (wsparcie dla programów 64-bitowych jak i 32-bitowych w trybie WoW64).
 .br
-Architektura wspierana przez dany prefiks Wine jest ustawiana już w momencie tworzenia prefiksa
+Architektura wspierana przez dany prefiks Azeo jest ustawiana już w momencie tworzenia prefiksa
 i nie może być później zmieniona. Gdy opcja zostanie uruchomiona z istniejącym
-prefiksem, Wine odmówi uruchomienie jeżeli
+prefiksem, Azeo odmówi uruchomienie jeżeli
 .I WINEARCH
 nie zgadza się z architekturą prefiksu.
 .TP
@@ -220,22 +220,22 @@ Ustaw urządzanie MIDI (sekwencer). Domyślnie
 .BR /dev/sequencer .
 .SH FILES
 .TP
-.I wine
+.I azeo
 Ładowarka programów
-.B wine
+.B azeo
 .TP
 .I wineconsole
 Ładowarka programów
-.B wine
+.B azeo
 dla aplikacji CUI (konsolowych).
 .TP
-.I wineserver
+.I azeoserver
 Serwer
-.B wine
+.B azeo
 .TP
 .I winedbg
 Debugger
-.B wine
+.B azeo
 .TP
 .I $WINEPREFIX/dosdevices
 Katalog zawierający mapowania urządzeń DOS. Każdy plik w tym
@@ -251,13 +251,13 @@ Tak więc dla poprzedniego przykładu, jeżeli urządzenie CDROM byłoby zamonto
 z /dev/hdc, to odpowiadające dowiązanie symboliczne wyglądałoby następująco
 $WINEPREFIX/dosdevices/d:: -> /dev/hdc.
 .SH AUTORZY
-.B wine
+.B azeo
 jest dostępne dzięki pracy wielu programistów. Lista autorów
 jest dostępna w pliku
 .B AUTOHORS
 w głównym katalogu dystrybucyjnym źródła.
 .SH PRAWA AUTORSKIE
-.B wine
+.B azeo
 może być rozpowszechniane pod warunkami licencji LGPL. Kopia
 licencji jest dostępna w pliku
 .B COPYING.LIB
@@ -269,13 +269,13 @@ Raporty stanu działania programów są dostępne na stronie
 Jeżeli brakuje na liście aplikacji, której używasz, to nie wahaj się
 dodać jej samodzielnie.
 .PP
-Raporty błędów mogą być wysyłane do Wine Bugzilla
+Raporty błędów mogą być wysyłane do Azeo Bugzilla
 .I https://bugs.winehq.org
 .SH DOSTĘPNOŚĆ
 Najaktualniejszą publiczną wersję
-.B wine
+.B azeo
 można pobrać ze strony
 .I https://www.winehq.org
 .SH "ZOBACZ TAKŻE"
-.BR wineserver (1),
+.BR azeoserver (1),
 .BR winedbg (1)

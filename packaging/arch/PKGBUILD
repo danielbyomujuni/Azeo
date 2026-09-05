@@ -1,0 +1,112 @@
+# Maintainer: Daniel Byomujuni <trainerlord@gmail.com>
+#
+# Builds Azeo from the official repository. The source location and
+# branch can be overridden without editing this file, e.g.:
+#
+#   AZEO_BRANCH=mybranch makepkg -s
+#   AZEO_GIT_URL=file:///path/to/local/clone AZEO_BRANCH=mybranch makepkg -s
+
+pkgname=azeo
+pkgver=11.17
+pkgrel=1
+pkgdesc="Wine fork with tweaks for consistency"
+arch=(x86_64)
+url="https://github.com/danielbyomujuni/Azeo"
+license=(LGPL-2.1-or-later)
+
+_giturl="${AZEO_GIT_URL:-https://github.com/danielbyomujuni/Azeo.git}"
+_branch="${AZEO_BRANCH:-master}"
+source=("$pkgname::git+${_giturl}#branch=${_branch}")
+sha256sums=('SKIP')
+
+depends=(
+  desktop-file-utils
+  fontconfig
+  freetype2
+  gcc-libs
+  gettext
+  gnutls
+  libxcursor
+  libxi
+  libxkbcommon
+  libxrandr
+  wayland
+)
+makedepends=(
+  alsa-lib
+  bison
+  flex
+  git
+  gst-plugins-base-libs
+  libcups
+  libgphoto2
+  libpulse
+  libxcomposite
+  libxinerama
+  mesa
+  mingw-w64-gcc
+  opencl-headers
+  opencl-icd-loader
+  pcsclite
+  samba
+  sdl2-compat
+  unixodbc
+  v4l-utils
+  vulkan-headers
+  vulkan-icd-loader
+)
+optdepends=(
+  'alsa-lib: ALSA audio driver'
+  'cups: printer support'
+  'gst-plugins-base-libs: multimedia playback'
+  'libgphoto2: digital camera support'
+  'libpulse: PulseAudio/PipeWire audio driver'
+  'opencl-icd-loader: OpenCL support'
+  'pcsclite: smart card support'
+  'samba: NTLM authentication'
+  'sdl2-compat: game controller support'
+  'unixodbc: ODBC databases'
+  'v4l-utils: webcam support'
+  'vulkan-icd-loader: Vulkan and Direct3D 12'
+  'wine-gecko: embedded HTML rendering (mshtml)'
+  'wine-mono: .NET applications'
+)
+
+# Azeo is the one and only Wine on the system: satisfy anything that
+# depends on wine, and refuse to coexist with a real Wine install.
+provides=("wine=$pkgver")
+conflicts=(wine wine-staging)
+
+options=(staticlibs !lto !debug)
+
+pkgver() {
+  sed -n 's/^[A-Za-z]* version //p' "$srcdir/$pkgname/VERSION"
+}
+
+build() {
+  mkdir -p "$srcdir/build"
+  cd "$srcdir/build"
+
+  "$srcdir/$pkgname/configure" \
+    --prefix=/usr \
+    --libdir=/usr/lib \
+    --enable-archs=x86_64,i386 \
+    --with-x \
+    --with-wayland \
+    --disable-tests
+  make
+}
+
+package() {
+  cd "$srcdir/build"
+  make DESTDIR="$pkgdir" install
+
+  # Forward every wine entry point to azeo, so scripts, launchers and
+  # tools (Lutris, winetricks, .desktop files, ...) that invoke wine
+  # transparently get azeo instead.
+  ln -s azeo        "$pkgdir/usr/bin/wine"
+  ln -s azeo        "$pkgdir/usr/bin/wine64"
+  ln -s azeoserver  "$pkgdir/usr/bin/wineserver"
+  ln -s azeo.1       "$pkgdir/usr/share/man/man1/wine.1"
+  ln -s azeoserver.1 "$pkgdir/usr/share/man/man1/wineserver.1"
+}

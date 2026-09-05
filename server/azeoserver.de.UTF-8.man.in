@@ -1,17 +1,17 @@
-.TH WINESERVER 1 "Oktober 2005" "@PACKAGE_STRING@" "Windows on Unix"
+.TH AZEOSERVER 1 "Oktober 2005" "@PACKAGE_STRING@" "Windows on Unix"
 .SH NAME
-wineserver \- der Wine Server
+azeoserver \- der Wine Server
 .SH ÜBERSICHT
-.BI wineserver\  [options]
+.BI azeoserver\  [options]
 .SH BESCHREIBUNG
-.B wineserver
+.B azeoserver
 ist ein Hintergrundprozess, der Wine vergleichbare Dienste bereitstellt,
 wie der Windows Kernel unter Windows.
 .PP
-.B wineserver
-startet normalerweise automatisch mit \fBwine\fR(1), daher sollten Sie sich
+.B azeoserver
+startet normalerweise automatisch mit \fBazeo\fR(1), daher sollten Sie sich
 darüber keine Gedanken machen müssen. In einigen Fällen kann es jedoch von
-Nutzen sein, \fBwineserver\fR explizit mit verschiedenen Optionen aufzurufen,
+Nutzen sein, \fBazeoserver\fR explizit mit verschiedenen Optionen aufzurufen,
 wie im Folgenden beschrieben.
 .SH ARGUMENTE
 .TP
@@ -22,7 +22,7 @@ Setzt das Debuglevel auf
 detaillierte Ausgabe. Wenn
 .I n
 nicht angegeben wird, ist 1 der Standardwert. Die Debugausgabe wird
-an stderr geleitet. \fBwine\fR(1) wird beim Start von \fBwineserver\fR
+an stderr geleitet. \fBazeo\fR(1) wird beim Start von \fBazeoserver\fR
 automatisch das Debuglevel auf normal setzen, wenn +server in der
 Umgebungsvariable WINEDEBUG angegeben ist.
 .TP
@@ -35,13 +35,13 @@ Zeigt den Hilfetext an.
 .TP
 \fB\-k\fR[\fIn\fR], \fB--kill\fR[\fB=\fIn\fR]
 Beendet den momentan laufenden
-.BR wineserver ,
+.BR azeoserver ,
 optional mit Signal \fIn\fR. Wenn kein Signal angegeben wurde, wird
 SIGINT, gefolgt von einem SIGKILL gesendet. Die zu beendende Instanz von
-\fBwineserver\fR wird durch die Umgebungsvariable WINEPREFIX bestimmt.
+\fBazeoserver\fR wird durch die Umgebungsvariable WINEPREFIX bestimmt.
 .TP
 \fB\-p\fR[\fIn\fR], \fB--persistent\fR[\fB=\fIn\fR]
-Gibt die Dauer an, für die \fBwineserver\fR weiterläuft nachdem alle
+Gibt die Dauer an, für die \fBazeoserver\fR weiterläuft nachdem alle
 Clientprozesse beendet sind. Das erspart den Rechenaufwand und Zeitverlust
 eines Neustarts, wenn Anwendungen in schneller Abfolge gestartet werden.
 Die Verzögerung \fIn\fR ist anzugeben in Sekunden, der Standardwert ist 3.
@@ -52,18 +52,18 @@ Zeigt Versionsinformationen an und beendet sich wieder.
 .TP
 .BR \-w ", " --wait
 Wartet, bis sich der gerade laufende
-.B wineserver
+.B azeoserver
 beendet hat.
 .SH UMGEBUNGSVARIABLEN
 .TP
 .B WINEPREFIX
 Wenn gesetzt, wird der Inhalt dieser Umgebungsvariable als Pfad zu einem
 Verzeichnis interpretiert, in dem der
-.B wineserver
+.B azeoserver
 seine Daten ablegt (Standardmäßig in \fI$HOME/.wine\fR). Alle
-.B wine
+.B azeo
 -Prozesse, die den selben
-.B wineserver
+.B azeoserver
 verwenden (z.B. vom selben Benutzer), teilen sich u.a. die selbe Registry,
 gemeinsamen Speicher und Kernelobjekte.
 Durch Setzen von unterschiedlichen Pfaden als
@@ -74,7 +74,7 @@ unabhängiger Sitzungen von Wine zu betreiben.
 .TP
 .B ~/.wine
 Verzeichnis mit benutzerspezifischen Daten, die von
-.B wine
+.B azeo
 verwaltet werden.
 .TP
 .BI /tmp/.wine- uid
@@ -83,7 +83,7 @@ Diese Dateien werden in einem Unterverzeichnis angelegt, dessen Name sich aus
 den Geräte- und Inode-Nummern des WINEPREFIX-Verzeichnisses zusammensetzt.
 .SH AUTOREN
 Der ursprüngliche Autor von
-.B wineserver
+.B azeoserver
 ist Alexandre Julliard. Viele andere Personen haben neue Funktionen hinzugefügt
 und Fehler behoben. Details finden Sie in der Datei Changelog.
 .SH FEHLER
@@ -92,10 +92,10 @@ Wenn Sie einen Fehler finden, melden Sie ihn bitte im
 .B Wine Bugtracker
 .UE .
 .SH VERFÜGBARKEIT
-.B wineserver
+.B azeoserver
 ist Teil der Wine-Distribution, verfügbar im WineHQ, dem
 .UR https://www.winehq.org/
 .B  Hauptquartier der Wine-Entwicklung
 .UE .
 .SH "SIEHE AUCH"
-.BR wine (1).
+.BR azeo (1).

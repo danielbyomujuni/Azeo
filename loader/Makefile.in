@@ -1,8 +1,8 @@
 SOURCES = \
+	azeo.desktop \
 	main.c \
 	preloader.c \
 	preloader_mac.c \
-	wine.desktop \
 	wine.inf.in \
 	wine_info.plist.in
 
@@ -12,10 +12,10 @@ UNIX_CFLAGS = -fPIE
 
 preloader_EXTRADEFS = -fno-builtin
 
-wine_OBJS = main.o
-wine_DEPS = $(WINELOADER_DEPENDS)
-wine_LDFLAGS = $(WINELOADER_LDFLAGS) $(LDEXECFLAGS) $(PTHREAD_LIBS)
+azeo_OBJS = main.o
+azeo_DEPS = $(WINELOADER_DEPENDS)
+azeo_LDFLAGS = $(WINELOADER_LDFLAGS) $(LDEXECFLAGS) $(PTHREAD_LIBS)
 
-wine_preloader_OBJS = preloader.o preloader_mac.o
-wine_preloader_DEPS = $(WINELOADER_DEPENDS)
-wine_preloader_LDFLAGS = $(WINEPRELOADER_LDFLAGS)
+azeo_preloader_OBJS = preloader.o preloader_mac.o
+azeo_preloader_DEPS = $(WINELOADER_DEPENDS)
+azeo_preloader_LDFLAGS = $(WINEPRELOADER_LDFLAGS)

@@ -6,7 +6,7 @@ m4_define(WINE_VERSION,regexp(m4_include(VERSION),[version \([-.0-9A-Za-z]+\)],[
 
 dnl autoconf versions before 2.63b don't have AS_VAR_APPEND or AS_VAR_IF
 AC_PREREQ(2.63b)
-AC_INIT([Wine],[WINE_VERSION],[wine-devel@winehq.org],[wine],[https://www.winehq.org])
+AC_INIT([Azeo],[WINE_VERSION],[https://github.com/danielbyomujuni/Azeo/issues],[azeo],[https://github.com/danielbyomujuni/Azeo])
 AC_CONFIG_SRCDIR(server/atom.c)
 AC_CONFIG_HEADERS(include/config.h)
 
@@ -182,7 +182,7 @@ case $host_os in
     dnl Disable modules that can't be used on Windows
     enable_loader=${enable_loader:-no}
     enable_server=${enable_server:-no}
-    enable_wine=${enable_wine:-no}
+    enable_azeo=${enable_azeo:-no}
     enable_win16=${enable_win16:-no}
     dnl Disable dependencies that are not useful on Windows
     with_x=${with_x:-no}
@@ -2086,7 +2086,7 @@ fi
 
 dnl **** Platform-specific checks ****
 
-AC_SUBST(WINELOADER_PROGRAMS,"wine")
+AC_SUBST(WINELOADER_PROGRAMS,"azeo")
 
 case $host_os in
   linux*)
@@ -2099,7 +2099,7 @@ esac
 
 if test "$wine_use_preloader" = "yes"
 then
-  WINELOADER_PROGRAMS="$WINELOADER_PROGRAMS wine-preloader"
+  WINELOADER_PROGRAMS="$WINELOADER_PROGRAMS azeo-preloader"
   AC_DEFINE(HAVE_WINE_PRELOADER, 1, [Define to 1 if the Wine preloader is being used.])
 fi
 
@@ -3708,7 +3708,7 @@ WINE_CONFIG_MAKEFILE(server)
 WINE_CONFIG_MAKEFILE(tools)
 WINE_CONFIG_MAKEFILE(tools/sfnt2fon)
 WINE_CONFIG_MAKEFILE(tools/widl)
-WINE_CONFIG_MAKEFILE(tools/wine)
+WINE_CONFIG_MAKEFILE(tools/azeo)
 WINE_CONFIG_MAKEFILE(tools/winebuild)
 WINE_CONFIG_MAKEFILE(tools/winedump)
 WINE_CONFIG_MAKEFILE(tools/winegcc)
@@ -3797,11 +3797,11 @@ programs/winedbg/winedbg \
 programs/winefile/winefile \
 programs/winemine/winemine \
 programs/winepath/winepath \
-server/wineserver"
+server/azeoserver"
 
     case $host_os in
       cygwin*|mingw32*|darwin*|linux-android*) ;;
-      *) TOP_INSTALL_LIB="$TOP_INSTALL_LIB loader/wine.desktop" ;;
+      *) TOP_INSTALL_LIB="$TOP_INSTALL_LIB loader/azeo.desktop" ;;
     esac
 fi
 
@@ -3809,7 +3809,7 @@ dnl Rules for generated source files
 
 WINE_APPEND_RULE(
 [dlls/ntdll/unix/version.c: dummy
-	@version=\`(GIT_DIR=${wine_srcdir}.git git describe HEAD 2>/dev/null || echo \"wine-\$(PACKAGE_VERSION)\") | sed -n -e '\$\$s/\(.*\)/const char wine_build[[]] = \"\\1\";/p'\` && (echo \$\$version | cmp -s - \$[@]) || echo \$\$version >\$[@] || (rm -f \$[@] && exit 1)
+	@version=\`(GIT_DIR=${wine_srcdir}.git git describe HEAD 2>/dev/null || echo \"azeo-\$(PACKAGE_VERSION)\") | sed -n -e 's/^wine/azeo/' -e '\$\$s/\(.*\)/const char wine_build[[]] = \"\\1\";/p'\` && (echo \$\$version | cmp -s - \$[@]) || echo \$\$version >\$[@] || (rm -f \$[@] && exit 1)
 programs/winetest/build.rc: dummy
 	@build=\"STRINGTABLE { 1 \\\"\`GIT_DIR=${wine_srcdir}.git git rev-parse HEAD 2>/dev/null\`\\\" }\" && (echo \$\$build | cmp -s - \$[@]) || echo \$\$build >\$[@] || (rm -f \$[@] && exit 1)
 dlls/wineandroid.drv/wine-debug.apk: dlls/wineandroid.drv/build.gradle ${wine_srcdir}dlls/wineandroid.drv/AndroidManifest.xml ${wine_srcdir}dlls/wineandroid.drv/WineActivity.java ${wine_srcdir}dlls/wineandroid.drv/wine.svg
@@ -3841,7 +3841,7 @@ fi
 WINE_PRINT_MESSAGES
 
 AS_ECHO("
-$as_me: Finished.  Do '${MAKE-make}' to compile Wine.
+$as_me: Finished.  Do '${MAKE-make}' to compile Azeo.
 ") >&AS_MESSAGE_FD
 
 dnl Local Variables:

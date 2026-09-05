@@ -1,18 +1,18 @@
-.TH WINESERVER 1 "October 2005" "@PACKAGE_STRING@" "Windows on Unix"
+.TH AZEOSERVER 1 "October 2005" "@PACKAGE_STRING@" "Windows on Unix"
 .SH NAME
-wineserver \- the Wine server
+azeoserver \- the Azeo server
 .SH SYNOPSIS
-.B wineserver
+.B azeoserver
 .RI [ options ]
 .SH DESCRIPTION
-.B wineserver
+.B azeoserver
 is a daemon process that provides to Wine roughly the same services
 that the Windows kernel provides on Windows.
 .PP
-.B wineserver
-is normally launched automatically when starting \fBwine\fR(1), so you
+.B azeoserver
+is normally launched automatically when starting \fBazeo\fR(1), so you
 shouldn't have to worry about it. In some cases however, it can be
-useful to start \fBwineserver\fR explicitly with different options, as
+useful to start \fBazeoserver\fR explicitly with different options, as
 explained below.
 .SH OPTIONS
 .TP
@@ -23,8 +23,8 @@ Set the debug level to
 extra verbose debugging. If
 .I n
 is not specified, the default is 1. The debug output will be sent to
-stderr. \fBwine\fR(1) will automatically enable normal level debugging
-when starting \fBwineserver\fR if the +server option is set in the
+stderr. \fBazeo\fR(1) will automatically enable normal level debugging
+when starting \fBazeoserver\fR if the +server option is set in the
 \fBWINEDEBUG\fR variable.
 .TP
 .BR \-f ", " --foreground
@@ -36,14 +36,14 @@ Display a help message.
 .TP
 \fB\-k\fR[\fIn\fR], \fB--kill\fR[\fB=\fIn\fR]
 Kill the currently running
-.BR wineserver ,
+.BR azeoserver ,
 optionally by sending signal \fIn\fR. If no signal is specified, sends
-a \fBSIGINT\fR first and then a \fBSIGKILL\fR.  The instance of \fBwineserver\fR
+a \fBSIGINT\fR first and then a \fBSIGKILL\fR.  The instance of \fBazeoserver\fR
 that is killed is selected based on the \fBWINEPREFIX\fR environment
 variable.
 .TP
 \fB\-p\fR[\fIn\fR], \fB--persistent\fR[\fB=\fIn\fR]
-Specify the \fBwineserver\fR persistence delay, i.e. the amount of
+Specify the \fBazeoserver\fR persistence delay, i.e. the amount of
 time that the server will keep running when all client processes have
 terminated. This avoids the cost of shutting down and starting again
 when programs are launched in quick succession. The timeout \fIn\fR is
@@ -55,17 +55,17 @@ Display version information and exit.
 .TP
 .BR \-w ", " --wait
 Wait until the currently running
-.B wineserver
+.B azeoserver
 terminates.
 .SH ENVIRONMENT
 .TP
 .B WINEPREFIX
 If set, the content of this variable is taken as the name of the directory where
-.B wineserver
+.B azeoserver
 stores its data (the default is \fI$HOME/.wine\fR). All
-.B wine
+.B azeo
 processes using the same
-.B wineserver
+.B azeoserver
 (i.e.: same user) share certain things like registry, shared memory
 and kernel objects.
 By setting
@@ -76,7 +76,7 @@ run a number of truly independent Wine sessions.
 .TP
 .B ~/.wine
 Directory containing user specific data managed by
-.BR wine .
+.BR azeo .
 .TP
 .BI /tmp/.wine- uid
 Directory containing the server Unix socket and the lock
@@ -84,7 +84,7 @@ file. These files are created in a subdirectory generated from the
 \fBWINEPREFIX\fR directory device and inode numbers.
 .SH AUTHORS
 The original author of
-.B wineserver
+.B azeoserver
 is Alexandre Julliard. Many other people have contributed new features
 and bug fixes. For a complete list, see the git commit logs.
 .SH BUGS
@@ -93,14 +93,14 @@ Bugs can be reported on the
 .B Wine bug tracker
 .UE .
 .SH AVAILABILITY
-.B wineserver
+.B azeoserver
 is part of the Wine distribution, which is available through WineHQ,
 the
 .UR https://www.winehq.org/
 .B Wine development headquarters
 .UE .
 .SH "SEE ALSO"
-.BR wine (1),
+.BR azeo (1),
 .br
 .UR https://www.winehq.org/help
 .B Wine documentation and support

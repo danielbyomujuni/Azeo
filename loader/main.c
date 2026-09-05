@@ -182,11 +182,11 @@ int main( int argc, char *argv[] )
     {
         void (*init_func)(int, char **) = dlsym( handle, "__wine_main" );
         if (init_func) init_func( argc, argv );
-        fprintf( stderr, "wine: __wine_main function not found in ntdll.so\n" );
+        fprintf( stderr, "azeo: __wine_main function not found in ntdll.so\n" );
         exit(1);
     }
 
-    fprintf( stderr, "wine: could not load ntdll.so: %s\n", dlerror() );
+    fprintf( stderr, "azeo: could not load ntdll.so: %s\n", dlerror() );
     pthread_detach( pthread_self() );  /* force importing libpthread for OpenGL */
     exit(1);
 }

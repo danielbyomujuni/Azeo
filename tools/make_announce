@@ -62,7 +62,7 @@ sub get_current_version()
     my $version;
 
     open VERSION, "<VERSION" or die "cannot open VERSION";
-    if (<VERSION> =~ /Wine version (\S+)/) { $version = $1; }
+    if (<VERSION> =~ /Azeo version (\S+)/) { $version = $1; }
     close VERSION;
     die "failed to parse VERSION" unless $version;
     return $version;

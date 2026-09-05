@@ -4446,7 +4446,7 @@ static void output_sources( struct makefile *make )
         if (make->is_exe && !make->is_win16 && unix_lib_supported && strendswith( make->module, ".exe" ))
         {
             char *binary = replace_extension( make->module, ".exe", "" );
-            install_program_symlink( make, binary, tools_path("wine"), binary );
+            install_program_symlink( make, binary, tools_path("azeo"), binary );
         }
     }
     else if (make->testdll)
@@ -4826,13 +4826,13 @@ static void output_top_makefile( struct makefile *make )
             silent_rules ? " -S" : "" );
     strarray_add( &make->phony_targets, "depend" );
 
-    if (!strarray_exists( disabled_dirs[0], "tools/wine" ))
+    if (!strarray_exists( disabled_dirs[0], "tools/azeo" ))
     {
-        const char *loader = "tools/wine/wine";
-        if (!strarray_exists( subdirs, "tools/wine" )) loader = tools_path( "wine" );
-        output( "wine: %s\n", loader );
+        const char *loader = "tools/azeo/azeo";
+        if (!strarray_exists( subdirs, "tools/azeo" )) loader = tools_path( "azeo" );
+        output( "azeo: %s\n", loader );
         output( "\t%srm -f $@ && %s %s $@\n", cmd_prefix( "LN" ), ln_s, loader );
-        strarray_add( &make->all_targets[0], "wine" );
+        strarray_add( &make->all_targets[0], "azeo" );
     }
 
     if (wine64_dir)

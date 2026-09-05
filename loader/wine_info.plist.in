@@ -7,13 +7,13 @@
     <key>CFBundleDevelopmentRegion</key>
     <string>English</string>
     <key>CFBundleExecutable</key>
-    <string>wine</string>
+    <string>azeo</string>
     <key>CFBundleIdentifier</key>
-    <string>org.winehq.wine</string>
+    <string>com.github.danielbyomujuni.azeo</string>
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
     <key>CFBundleName</key>
-    <string>Wine</string>
+    <string>Azeo</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
