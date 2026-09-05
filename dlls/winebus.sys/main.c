@@ -593,6 +593,12 @@ static BOOL is_hidraw_enabled(WORD vid, WORD pid, const USAGE_AND_PAGE *usages, 
          * a catch-all on VID and exclude any hypothetical future device that wants hidraw=false */
         prefer_hidraw = TRUE;
         break;
+    case 0x346e:
+        /* MOZA Racing wheelbases and accessories; the vendor configuration tool
+         * reads raw input reports and uses feature reports, which requires the
+         * real device report descriptor rather than a translated one */
+        prefer_hidraw = TRUE;
+        break;
     case 0x03eb:
         /* users may have configured button limits, usually 32/50/64 */
         if ((buttons == 32) || (buttons == 50) || (buttons == 64)) prefer_hidraw = TRUE;
@@ -1229,7 +1235,7 @@ static void bus_options_init(void)
     options.disable_sdl = !check_bus_option(L"Enable SDL", 1);
     if (options.disable_sdl) TRACE("SDL devices disabled in registry\n");
     options.disable_hidraw = check_bus_option(L"DisableHidraw", 0);
-    if (options.disable_hidraw) TRACE("IOHID and UDEV hidraw devices disabled in registry\n");
+    if (options.disable_hidraw) TRACE("UDEV hidraw devices disabled in registry\n");
     options.disable_input = check_bus_option(L"DisableInput", 0);
     if (options.disable_input) TRACE("UDEV input devices disabled in registry\n");
     options.disable_udevd = check_bus_option(L"DisableUdevd", 0);
@@ -1478,7 +1484,6 @@ static NTSTATUS hid_get_device_string(DEVICE_OBJECT *device, DWORD index, WCHAR 
         else memcpy(buffer, ext->desc.product, len);
         return STATUS_SUCCESS;
     case HID_STRING_ID_ISERIALNUMBER:
-        if (!*ext->desc.serialnumber) return STATUS_INVALID_PARAMETER;
         len = (wcslen(ext->desc.serialnumber) + 1) * sizeof(WCHAR);
         if (len > buffer_len) return STATUS_BUFFER_TOO_SMALL;
         else memcpy(buffer, ext->desc.serialnumber, len);

@@ -119,6 +119,27 @@ struct detect_ports_params
     ULONG size;
 };
 
+struct usb_serial_info
+{
+    unsigned int vendor;
+    unsigned int product;
+    unsigned int revision;        /* bcdDevice */
+    int          interface_index; /* -1 if the port is not on a USB interface */
+    unsigned int iface_class;
+    unsigned int iface_subclass;
+    unsigned int iface_protocol;
+    char         serial[64];
+    char         manufacturer[128];
+    char         product_name[128];
+    char         syspath[256];    /* identifies the underlying device, for deduplication */
+};
+
+struct get_usb_serial_info_params
+{
+    const char *path;             /* Unix device path */
+    struct usb_serial_info *info;
+};
+
 struct set_shell_folder_params
 {
     const WCHAR *folder;
@@ -165,6 +186,7 @@ enum mountmgr_funcs
     unix_check_device_access,
     unix_detect_serial_ports,
     unix_detect_parallel_ports,
+    unix_get_usb_serial_info,
     unix_set_shell_folder,
     unix_get_shell_folder,
     unix_dhcp_request,
