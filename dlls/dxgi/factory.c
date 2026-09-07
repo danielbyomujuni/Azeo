@@ -390,10 +390,43 @@ static void STDMETHODCALLTYPE dxgi_factory_UnregisterOcclusionStatus(IWineDXGIFa
 static HRESULT STDMETHODCALLTYPE dxgi_factory_CreateSwapChainForComposition(IWineDXGIFactory *iface,
         IUnknown *device, const DXGI_SWAP_CHAIN_DESC1 *desc, IDXGIOutput *output, IDXGISwapChain1 **swapchain)
 {
-    FIXME("iface %p, device %p, desc %p, output %p, swapchain %p stub!\n",
+    DXGI_SWAP_CHAIN_FULLSCREEN_DESC fullscreen_desc;
+    UINT width, height;
+    HWND window;
+    HRESULT hr;
+
+    TRACE("iface %p, device %p, desc %p, output %p, swapchain %p.\n",
             iface, device, desc, output, swapchain);
 
-    return E_NOTIMPL;
+    if (!device || !desc || !swapchain)
+    {
+        WARN("Invalid pointer.\n");
+        return DXGI_ERROR_INVALID_CALL;
+    }
+
+    /* A composition swapchain has no window of its own; it is meant to be
+     * attached to a DirectComposition visual as content. Back it with a
+     * hidden window so the regular swapchain path can be reused - dcomp
+     * presents it by reading back buffer 0. */
+    width = desc->Width ? desc->Width : 1;
+    height = desc->Height ? desc->Height : 1;
+    if (!(window = CreateWindowExW(WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE, L"static", NULL,
+            WS_POPUP, 0, 0, width, height, NULL, NULL, NULL, NULL)))
+    {
+        ERR("Failed to create backing window for composition swapchain.\n");
+        return E_FAIL;
+    }
+
+    memset(&fullscreen_desc, 0, sizeof(fullscreen_desc));
+    fullscreen_desc.Windowed = TRUE;
+
+    if (FAILED(hr = dxgi_factory_CreateSwapChainForHwnd(iface, device, window, desc,
+            &fullscreen_desc, output, swapchain)))
+    {
+        WARN("Failed to create composition swapchain, hr %#lx.\n", hr);
+        DestroyWindow(window);
+    }
+    return hr;
 }
 
 static UINT STDMETHODCALLTYPE dxgi_factory_GetCreationFlags(IWineDXGIFactory *iface)
