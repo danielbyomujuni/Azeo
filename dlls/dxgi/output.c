@@ -363,14 +363,33 @@ static HRESULT STDMETHODCALLTYPE dxgi_output_FindClosestMatchingMode(IDXGIOutput
 
 static HRESULT STDMETHODCALLTYPE dxgi_output_WaitForVBlank(IDXGIOutput6 *iface)
 {
-    static BOOL once = FALSE;
+    struct dxgi_output *output = impl_from_IDXGIOutput6(iface);
+    struct wined3d_display_mode mode;
+    unsigned int refresh_rate = 60;
+    LARGE_INTEGER freq, now;
+    UINT64 interval_100ns, next;
+    HRESULT hr;
 
-    if (!once++)
-        FIXME("iface %p stub!\n", iface);
-    else
-        TRACE("iface %p stub!\n", iface);
+    TRACE("iface %p.\n", iface);
 
-    return E_NOTIMPL;
+    /* There is no real vblank source; approximate the wait by sleeping to the
+     * next refresh-interval boundary so callers get sane frame pacing instead
+     * of E_NOTIMPL (which makes Chromium and friends give up on rendering). */
+    wined3d_mutex_lock();
+    hr = wined3d_output_get_display_mode(output->wined3d_output, &mode, NULL);
+    wined3d_mutex_unlock();
+    if (SUCCEEDED(hr) && mode.refresh_rate)
+        refresh_rate = mode.refresh_rate;
+
+    QueryPerformanceFrequency(&freq);
+    QueryPerformanceCounter(&now);
+    interval_100ns = 10000000u / refresh_rate;
+    if (!interval_100ns) interval_100ns = 166667;
+    /* time to the next interval boundary, in milliseconds (at least 1ms) */
+    next = interval_100ns - (((UINT64)now.QuadPart * 10000000u / freq.QuadPart) % interval_100ns);
+    Sleep(max(1, (DWORD)(next / 10000u)));
+
+    return S_OK;
 }
 
 static HRESULT STDMETHODCALLTYPE dxgi_output_TakeOwnership(IDXGIOutput6 *iface, IUnknown *device, BOOL exclusive)

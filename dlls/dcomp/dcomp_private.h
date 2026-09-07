@@ -86,9 +86,14 @@ struct dcomp_surface
     UINT width, height;
     DXGI_FORMAT format;
     DXGI_ALPHA_MODE alpha_mode;
-    ID3D11Texture2D *texture;     /* backing texture, may be NULL */
+    ID3D11Device *d3d_device;     /* referenced, may be NULL */
+    ID3D11Texture2D *texture;     /* backing texture, may be NULL; guarded by cs */
     BOOL drawing;
+    CRITICAL_SECTION cs;
 };
+
+/* Thread-safe grab of a surface's current texture (returns referenced or NULL). */
+ID3D11Texture2D *dcomp_surface_get_texture(struct dcomp_surface *surface);
 
 struct dcomp_visual *unsafe_impl_from_IDCompositionVisual(IDCompositionVisual *iface);
 struct dcomp_surface *unsafe_impl_from_content(IUnknown *content);

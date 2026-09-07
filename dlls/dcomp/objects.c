@@ -568,9 +568,50 @@ static ULONG WINAPI dcomp_surface_Release(IDCompositionVirtualSurface *iface)
     if (!refcount)
     {
         if (surface->texture) ID3D11Texture2D_Release(surface->texture);
+        if (surface->d3d_device) ID3D11Device_Release(surface->d3d_device);
+        surface->cs.DebugInfo->Spare[0] = 0;
+        DeleteCriticalSection(&surface->cs);
         free(surface);
     }
     return refcount;
+}
+
+ID3D11Texture2D *dcomp_surface_get_texture(struct dcomp_surface *surface)
+{
+    ID3D11Texture2D *texture;
+
+    EnterCriticalSection(&surface->cs);
+    if ((texture = surface->texture)) ID3D11Texture2D_AddRef(texture);
+    LeaveCriticalSection(&surface->cs);
+    return texture;
+}
+
+static HRESULT dcomp_surface_create_texture(struct dcomp_surface *surface)
+{
+    D3D11_TEXTURE2D_DESC desc = {0};
+    ID3D11Texture2D *texture;
+    HRESULT hr;
+
+    if (!surface->d3d_device || !surface->width || !surface->height) return E_FAIL;
+
+    desc.Width = surface->width;
+    desc.Height = surface->height;
+    desc.MipLevels = 1;
+    desc.ArraySize = 1;
+    desc.Format = surface->format ? surface->format : DXGI_FORMAT_B8G8R8A8_UNORM;
+    desc.SampleDesc.Count = 1;
+    desc.Usage = D3D11_USAGE_DEFAULT;
+    desc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+
+    if (FAILED(hr = ID3D11Device_CreateTexture2D(surface->d3d_device, &desc, NULL, &texture)))
+    {
+        WARN("Failed to create %ux%u backing texture, hr %#lx.\n", surface->width, surface->height, hr);
+        return hr;
+    }
+
+    if (surface->texture) ID3D11Texture2D_Release(surface->texture);
+    surface->texture = texture;
+    return S_OK;
 }
 
 static HRESULT WINAPI dcomp_surface_BeginDraw(IDCompositionVirtualSurface *iface, const RECT *rect,
@@ -583,14 +624,31 @@ static HRESULT WINAPI dcomp_surface_BeginDraw(IDCompositionVirtualSurface *iface
             iface, wine_dbgstr_rect(rect), debugstr_guid(iid), object, offset);
 
     if (!object || !offset) return E_POINTER;
+    if (surface->drawing) return E_UNEXPECTED;
+
+    EnterCriticalSection(&surface->cs);
+
+    /* (Re)create the backing texture if missing or stale after Resize(). */
+    if (surface->texture)
+    {
+        D3D11_TEXTURE2D_DESC desc;
+        ID3D11Texture2D_GetDesc(surface->texture, &desc);
+        if (desc.Width != surface->width || desc.Height != surface->height)
+            dcomp_surface_create_texture(surface);
+    }
+    else dcomp_surface_create_texture(surface);
+
     if (!surface->texture)
     {
+        LeaveCriticalSection(&surface->cs);
         WARN("No backing texture.\n");
         return E_FAIL;
     }
-    if (surface->drawing) return E_UNEXPECTED;
 
-    if (FAILED(hr = ID3D11Texture2D_QueryInterface(surface->texture, iid, object)))
+    hr = ID3D11Texture2D_QueryInterface(surface->texture, iid, object);
+    LeaveCriticalSection(&surface->cs);
+
+    if (FAILED(hr))
     {
         WARN("Backing texture does not expose %s, hr %#lx.\n", debugstr_guid(iid), hr);
         return hr;
@@ -636,10 +694,13 @@ static HRESULT WINAPI dcomp_surface_Resize(IDCompositionVirtualSurface *iface, U
 {
     struct dcomp_surface *surface = impl_from_IDCompositionVirtualSurface(iface);
 
-    FIXME("iface %p, width %u, height %u - resizing backing texture not implemented.\n", iface, width, height);
+    TRACE("iface %p, width %u, height %u.\n", iface, width, height);
 
+    EnterCriticalSection(&surface->cs);
     surface->width = width;
     surface->height = height;
+    /* the texture is recreated lazily on the next BeginDraw */
+    LeaveCriticalSection(&surface->cs);
     return S_OK;
 }
 
@@ -693,8 +754,6 @@ HRESULT dcomp_surface_create(struct dcomp_device *device, UINT width, UINT heigh
 {
     struct dcomp_surface *object;
     ID3D11Device *d3d_device;
-    D3D11_TEXTURE2D_DESC desc = {0};
-    HRESULT hr;
 
     if (!(object = calloc(1, sizeof(*object)))) return E_OUTOFMEMORY;
     object->IDCompositionVirtualSurface_iface.lpVtbl = &dcomp_surface_vtbl_ref;
@@ -703,24 +762,15 @@ HRESULT dcomp_surface_create(struct dcomp_device *device, UINT width, UINT heigh
     object->height = height;
     object->format = format;
     object->alpha_mode = alpha_mode;
+    InitializeCriticalSectionEx(&object->cs, 0, RTL_CRITICAL_SECTION_FLAG_FORCE_DEBUG_INFO);
+    object->cs.DebugInfo->Spare[0] = (DWORD_PTR)(__FILE__ ": dcomp_surface.cs");
 
     d3d_device = device->d3d_device ? device->d3d_device : get_fallback_d3d_device();
-    if (d3d_device && width && height)
+    if (d3d_device)
     {
-        desc.Width = width;
-        desc.Height = height;
-        desc.MipLevels = 1;
-        desc.ArraySize = 1;
-        desc.Format = format ? format : DXGI_FORMAT_B8G8R8A8_UNORM;
-        desc.SampleDesc.Count = 1;
-        desc.Usage = D3D11_USAGE_DEFAULT;
-        desc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
-
-        if (FAILED(hr = ID3D11Device_CreateTexture2D(d3d_device, &desc, NULL, &object->texture)))
-        {
-            WARN("Failed to create backing texture, hr %#lx.\n", hr);
-            object->texture = NULL;
-        }
+        object->d3d_device = d3d_device;
+        ID3D11Device_AddRef(d3d_device);
+        dcomp_surface_create_texture(object);
     }
 
     TRACE("created %ssurface %p, %ux%u, texture %p.\n",

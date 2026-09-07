@@ -114,24 +114,7 @@ static void blit_texture_to_window(HWND hwnd, ID3D11Texture2D *texture, int dst_
     if (FAILED(ID3D11DeviceContext_Map(context, (ID3D11Resource *)staging, 0, D3D11_MAP_READ, 0, &map)))
         goto done;
 
-    if (desc.Format == DXGI_FORMAT_R8G8B8A8_UNORM)
-    {
-        /* swizzle to BGRA in place for GDI */
-        unsigned int x, y;
-        for (y = 0; y < desc.Height; ++y)
-        {
-            unsigned char *row = (unsigned char *)map.pData + y * map.RowPitch;
-            for (x = 0; x < desc.Width; ++x)
-            {
-                unsigned char r = row[x * 4];
-                row[x * 4] = row[x * 4 + 2];
-                row[x * 4 + 2] = r;
-            }
-        }
-    }
-
     bmi.bmiHeader.biSize = sizeof(bmi.bmiHeader);
-    bmi.bmiHeader.biWidth = map.RowPitch / 4;
     bmi.bmiHeader.biHeight = -(LONG)desc.Height;
     bmi.bmiHeader.biPlanes = 1;
     bmi.bmiHeader.biBitCount = 32;
@@ -139,8 +122,37 @@ static void blit_texture_to_window(HWND hwnd, ID3D11Texture2D *texture, int dst_
 
     if ((hdc = GetDC(hwnd)))
     {
-        StretchDIBits(hdc, dst_x, dst_y, desc.Width, desc.Height,
-                0, 0, desc.Width, desc.Height, map.pData, &bmi, DIB_RGB_COLORS, SRCCOPY);
+        if (desc.Format == DXGI_FORMAT_R8G8B8A8_UNORM)
+        {
+            /* swizzle to BGRA in a scratch buffer; the READ mapping is not ours to write */
+            unsigned char *buf = malloc((size_t)desc.Width * desc.Height * 4);
+            if (buf)
+            {
+                unsigned int x, y;
+                for (y = 0; y < desc.Height; ++y)
+                {
+                    const unsigned char *src = (const unsigned char *)map.pData + (size_t)y * map.RowPitch;
+                    unsigned char *dst = buf + (size_t)y * desc.Width * 4;
+                    for (x = 0; x < desc.Width; ++x)
+                    {
+                        dst[x * 4] = src[x * 4 + 2];
+                        dst[x * 4 + 1] = src[x * 4 + 1];
+                        dst[x * 4 + 2] = src[x * 4];
+                        dst[x * 4 + 3] = src[x * 4 + 3];
+                    }
+                }
+                bmi.bmiHeader.biWidth = desc.Width;
+                StretchDIBits(hdc, dst_x, dst_y, desc.Width, desc.Height,
+                        0, 0, desc.Width, desc.Height, buf, &bmi, DIB_RGB_COLORS, SRCCOPY);
+                free(buf);
+            }
+        }
+        else
+        {
+            bmi.bmiHeader.biWidth = map.RowPitch / 4;
+            StretchDIBits(hdc, dst_x, dst_y, desc.Width, desc.Height,
+                    0, 0, desc.Width, desc.Height, map.pData, &bmi, DIB_RGB_COLORS, SRCCOPY);
+        }
         ReleaseDC(hwnd, hdc);
     }
 
@@ -169,12 +181,23 @@ static void pump_draw_item(HWND hwnd, const struct draw_item *item)
         return;
     }
 
-    if ((surface = unsafe_impl_from_content(item->content)) && surface->texture)
+    if ((surface = unsafe_impl_from_content(item->content)))
     {
-        blit_texture_to_window(hwnd, surface->texture, (int)item->x, (int)item->y);
+        if ((texture = dcomp_surface_get_texture(surface)))
+        {
+            blit_texture_to_window(hwnd, texture, (int)item->x, (int)item->y);
+            ID3D11Texture2D_Release(texture);
+        }
         return;
     }
 }
+
+struct blit_snapshot
+{
+    HWND hwnd;
+    struct draw_item *items;
+    unsigned int count;
+};
 
 static DWORD WINAPI pump_thread_proc(void *arg)
 {
@@ -184,15 +207,46 @@ static DWORD WINAPI pump_thread_proc(void *arg)
 
     for (;;)
     {
+        struct blit_snapshot *snap = NULL;
+        unsigned int snap_count = 0, snap_cap = 0, i, j;
+
+        /* Snapshot the draw lists under the lock - hold it for microseconds,
+         * never for the duration of a blit, or Chromium's compositor thread
+         * stalls behind Commit() and its hang watchdog kills the process. */
         EnterCriticalSection(&pump_cs);
         LIST_FOR_EACH_ENTRY(t, &pump_targets, struct pump_target, entry)
         {
-            unsigned int i;
-            if (!IsWindow(t->hwnd)) continue;
+            if (!t->item_count) continue;
+            if (snap_count == snap_cap)
+            {
+                unsigned int new_cap = snap_cap ? snap_cap * 2 : 4;
+                struct blit_snapshot *new_snap = realloc(snap, new_cap * sizeof(*snap));
+                if (!new_snap) break;
+                snap = new_snap;
+                snap_cap = new_cap;
+            }
+            snap[snap_count].items = malloc(t->item_count * sizeof(*t->items));
+            if (!snap[snap_count].items) continue;
+            snap[snap_count].hwnd = t->hwnd;
+            snap[snap_count].count = t->item_count;
             for (i = 0; i < t->item_count; ++i)
-                pump_draw_item(t->hwnd, &t->items[i]);
+            {
+                snap[snap_count].items[i] = t->items[i];
+                IUnknown_AddRef(snap[snap_count].items[i].content);
+            }
+            snap_count++;
         }
         LeaveCriticalSection(&pump_cs);
+
+        for (j = 0; j < snap_count; ++j)
+        {
+            if (IsWindow(snap[j].hwnd))
+                for (i = 0; i < snap[j].count; ++i)
+                    pump_draw_item(snap[j].hwnd, &snap[j].items[i]);
+            draw_items_free(snap[j].items, snap[j].count);
+        }
+        free(snap);
+
         Sleep(33);
     }
     return 0;
