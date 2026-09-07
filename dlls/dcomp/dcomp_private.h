@@ -89,6 +89,7 @@ struct dcomp_surface
     ID3D11Device *d3d_device;     /* referenced, may be NULL */
     ID3D11Texture2D *texture;     /* backing texture, may be NULL; guarded by cs */
     BOOL drawing;
+    BOOL written;                 /* content drawn since (re)creation */
     CRITICAL_SECTION cs;
 };
 
@@ -113,5 +114,6 @@ void dcomp_target_destroyed(struct dcomp_target *target);
 /* present pump */
 void pump_commit_device(struct dcomp_device *device);
 void pump_forget_target(struct dcomp_target *target);
+void pump_wake(void);
 
 #endif

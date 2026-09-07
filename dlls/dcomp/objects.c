@@ -603,7 +603,17 @@ static HRESULT dcomp_surface_create_texture(struct dcomp_surface *surface)
     desc.Usage = D3D11_USAGE_DEFAULT;
     desc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
 
-    if (FAILED(hr = ID3D11Device_CreateTexture2D(surface->d3d_device, &desc, NULL, &texture)))
+    {
+        /* Zero-initialise so an early blit shows transparent black rather
+         * than uninitialised memory (white flicker during resizes). */
+        D3D11_SUBRESOURCE_DATA data = {0};
+        void *zero = calloc(surface->height, (size_t)surface->width * 4);
+        data.pSysMem = zero;
+        data.SysMemPitch = surface->width * 4;
+        hr = ID3D11Device_CreateTexture2D(surface->d3d_device, &desc, zero ? &data : NULL, &texture);
+        free(zero);
+    }
+    if (FAILED(hr))
     {
         WARN("Failed to create %ux%u backing texture, hr %#lx.\n", surface->width, surface->height, hr);
         return hr;
@@ -611,6 +621,7 @@ static HRESULT dcomp_surface_create_texture(struct dcomp_surface *surface)
 
     if (surface->texture) ID3D11Texture2D_Release(surface->texture);
     surface->texture = texture;
+    surface->written = FALSE;
     return S_OK;
 }
 
@@ -667,6 +678,8 @@ static HRESULT WINAPI dcomp_surface_EndDraw(IDCompositionVirtualSurface *iface)
     TRACE("iface %p.\n", iface);
 
     surface->drawing = FALSE;
+    surface->written = TRUE;
+    pump_wake();
     return S_OK;
 }
 

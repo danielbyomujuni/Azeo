@@ -425,6 +425,18 @@ static HRESULT STDMETHODCALLTYPE dxgi_factory_CreateSwapChainForComposition(IWin
     {
         WARN("Failed to create composition swapchain, hr %#lx.\n", hr);
         DestroyWindow(window);
+        return hr;
+    }
+
+    /* Wrap it so dcomp's present pump can tell whether the back buffer holds
+     * presented content (avoids flashing uninitialised buffers on resize). */
+    {
+        IDXGISwapChain1 *inner = *swapchain, *wrapped;
+        if (SUCCEEDED(composition_swapchain_wrap(inner, window, &wrapped)))
+        {
+            *swapchain = wrapped;
+            IDXGISwapChain1_Release(inner);
+        }
     }
     return hr;
 }

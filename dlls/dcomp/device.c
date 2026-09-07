@@ -28,6 +28,14 @@
 
 WINE_DEFAULT_DEBUG_CHANNEL(dcomp);
 
+/* Shared with dlls/dxgi/composition.c: QI on a composition swapchain for this
+ * IID yields a LONG* that is non-zero while its back buffer holds presented
+ * content.  No reference is added. */
+static const GUID IID_wine_composition_content_valid =
+        {0x9f002c3a, 0x5c2d, 0x4f42, {0x91, 0x64, 0x7c, 0x2e, 0xd1, 0x8e, 0x1d, 0xab}};
+static const GUID IID_wine_composition_front_buffer =
+        {0x1b8aa5c1, 0x33f1, 0x4d6a, {0xb0, 0x62, 0x50, 0x0f, 0x8a, 0x9e, 0x44, 0x21}};
+
 /* ------------------------------------------------------------------ */
 /* Present pump.
  *
@@ -64,6 +72,12 @@ static CRITICAL_SECTION_DEBUG pump_cs_debug =
 static CRITICAL_SECTION pump_cs = { &pump_cs_debug, -1, 0, 0, 0, 0 };
 static struct list pump_targets = LIST_INIT(pump_targets);
 static HANDLE pump_thread;
+static HANDLE pump_wake_event;
+
+void pump_wake(void)
+{
+    if (pump_wake_event) SetEvent(pump_wake_event);
+}
 
 static void draw_items_free(struct draw_item *items, unsigned int count)
 {
@@ -172,6 +186,35 @@ static void pump_draw_item(HWND hwnd, const struct draw_item *item)
 
     if (SUCCEEDED(IUnknown_QueryInterface(item->content, &IID_IDXGISwapChain, (void **)&swapchain)))
     {
+        /* Prefer the wrapper's copy of the last presented frame; buffer 0 is
+         * the NEXT buffer to be drawn in the flip model and may be blank.
+         * The copy survives ResizeBuffers, so the last good frame keeps
+         * being painted until a new one is presented - a compositor never
+         * paints "nothing". */
+        if (SUCCEEDED(IUnknown_QueryInterface(item->content,
+                &IID_wine_composition_front_buffer, (void **)&texture)))
+        {
+            if (TRACE_ON(dcomp))
+            {
+                static ULONGLONG last_item_dump;
+                ULONGLONG now = GetTickCount64();
+                LONG *state;
+                if (now - last_item_dump >= 1000 && SUCCEEDED(IUnknown_QueryInterface(item->content,
+                        &IID_wine_composition_content_valid, (void **)&state)))
+                {
+                    D3D11_TEXTURE2D_DESC tdesc;
+                    ID3D11Texture2D_GetDesc(texture, &tdesc);
+                    last_item_dump = now;
+                    TRACE("PUMPSTATE   item %p on hwnd %p at %d,%d size %ux%u valid %ld presents %ld\n",
+                            item->content, hwnd, (int)item->x, (int)item->y,
+                            tdesc.Width, tdesc.Height, state[0], state[1]);
+                }
+            }
+            blit_texture_to_window(hwnd, texture, (int)item->x, (int)item->y);
+            ID3D11Texture2D_Release(texture);
+            IDXGISwapChain_Release(swapchain);
+            return;
+        }
         if (SUCCEEDED(IDXGISwapChain_GetBuffer(swapchain, 0, &IID_ID3D11Texture2D, (void **)&texture)))
         {
             blit_texture_to_window(hwnd, texture, (int)item->x, (int)item->y);
@@ -183,6 +226,11 @@ static void pump_draw_item(HWND hwnd, const struct draw_item *item)
 
     if ((surface = unsafe_impl_from_content(item->content)))
     {
+        /* A surface that has not been drawn into since it was (re)created
+         * holds no meaningful pixels; blitting it flashes garbage during
+         * resizes. Keep whatever is on screen until content arrives. */
+        if (!surface->written)
+            return;
         if ((texture = dcomp_surface_get_texture(surface)))
         {
             blit_texture_to_window(hwnd, texture, (int)item->x, (int)item->y);
@@ -198,6 +246,76 @@ struct blit_snapshot
     struct draw_item *items;
     unsigned int count;
 };
+
+/* Overlay windows: the composition content of a target is shown in its own
+ * click-through popup owned by the target's root window, stacked above it -
+ * the same layering the system compositor provides on Windows.  Painting
+ * into the application's windows directly cannot work: with visual hosting
+ * the app legitimately paints its own (white) background under the content,
+ * and two writers on one surface flicker forever. */
+struct pump_overlay
+{
+    struct list entry;
+    HWND target;   /* composition target window (key) */
+    HWND overlay;
+    HWND owner;
+};
+static struct list pump_overlays = LIST_INIT(pump_overlays);   /* pump thread only */
+static ATOM overlay_class;
+
+static void pump_register_overlay_class(void)
+{
+    WNDCLASSW wc = {0};
+    if (overlay_class) return;
+    wc.lpfnWndProc = DefWindowProcW;
+    wc.hInstance = GetModuleHandleW(NULL);
+    wc.lpszClassName = L"WineDCompOverlay";
+    overlay_class = RegisterClassW(&wc);
+}
+
+static struct pump_overlay *pump_get_overlay(HWND target, HWND owner)
+{
+    struct pump_overlay *o;
+
+    LIST_FOR_EACH_ENTRY(o, &pump_overlays, struct pump_overlay, entry)
+        if (o->target == target) return o;
+
+    pump_register_overlay_class();
+    if (!(o = calloc(1, sizeof(*o)))) return NULL;
+    o->target = target;
+    o->owner = owner;
+    o->overlay = CreateWindowExW(WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE | WS_EX_TRANSPARENT,
+            L"WineDCompOverlay", NULL, WS_POPUP, 0, 0, 1, 1, owner, NULL,
+            GetModuleHandleW(NULL), NULL);
+    if (!o->overlay)
+    {
+        free(o);
+        return NULL;
+    }
+    TRACE("Created overlay %p for target %p (owner %p).\n", o->overlay, target, owner);
+    list_add_tail(&pump_overlays, &o->entry);
+    return o;
+}
+
+static void pump_prune_overlays(const struct blit_snapshot *snap, unsigned int snap_count)
+{
+    struct pump_overlay *o, *next;
+    unsigned int j;
+
+    LIST_FOR_EACH_ENTRY_SAFE(o, next, &pump_overlays, struct pump_overlay, entry)
+    {
+        BOOL found = FALSE;
+        for (j = 0; j < snap_count; ++j)
+            if (snap[j].hwnd == o->target) found = TRUE;
+        if (!found || !IsWindow(o->target))
+        {
+            TRACE("Destroying overlay %p (target %p gone).\n", o->overlay, o->target);
+            DestroyWindow(o->overlay);
+            list_remove(&o->entry);
+            free(o);
+        }
+    }
+}
 
 static DWORD WINAPI pump_thread_proc(void *arg)
 {
@@ -238,22 +356,92 @@ static DWORD WINAPI pump_thread_proc(void *arg)
         }
         LeaveCriticalSection(&pump_cs);
 
+        pump_prune_overlays(snap, snap_count);
+
         for (j = 0; j < snap_count; ++j)
         {
-            if (IsWindow(snap[j].hwnd))
-                for (i = 0; i < snap[j].count; ++i)
-                    pump_draw_item(snap[j].hwnd, &snap[j].items[i]);
+            HWND shown = snap[j].hwnd;
+            struct pump_overlay *o;
+            RECT r;
+
+            if (!IsWindow(snap[j].hwnd)) goto next_target;
+
+            /* Climb past never-shown intermediate windows; the first
+             * WS_VISIBLE ancestor tells us whether this content should be
+             * on screen at all. */
+            while (shown && !(GetWindowLongW(shown, GWL_STYLE) & WS_VISIBLE))
+                shown = GetParent(shown);
+
+            if (!(o = pump_get_overlay(snap[j].hwnd, GetAncestor(snap[j].hwnd, GA_ROOT))))
+                goto next_target;
+
+            if (!shown || !IsWindowVisible(shown) || IsIconic(o->owner))
+            {
+                ShowWindow(o->overlay, SW_HIDE);
+                goto next_target;
+            }
+
+            GetWindowRect(snap[j].hwnd, &r);
+            if (r.right <= r.left || r.bottom <= r.top)
+            {
+                ShowWindow(o->overlay, SW_HIDE);
+                goto next_target;
+            }
+
+            SetWindowPos(o->overlay, NULL, r.left, r.top, r.right - r.left, r.bottom - r.top,
+                    SWP_NOACTIVATE | SWP_NOZORDER | SWP_SHOWWINDOW);
+
+            for (i = 0; i < snap[j].count; ++i)
+                pump_draw_item(o->overlay, &snap[j].items[i]);
+
+        next_target:
             draw_items_free(snap[j].items, snap[j].count);
+        }
+
+        if (TRACE_ON(dcomp))
+        {
+            static ULONGLONG last_dump;
+            ULONGLONG now = GetTickCount64();
+            if (now - last_dump >= 1000)
+            {
+                last_dump = now;
+                for (j = 0; j < snap_count; ++j)
+                {
+                    HWND root = GetAncestor(snap[j].hwnd, GA_ROOT);
+                    RECT r = {0};
+                    GetWindowRect(snap[j].hwnd, &r);
+                    HWND pw = snap[j].hwnd;
+                    while (pw && !(GetWindowLongW(pw, GWL_STYLE) & WS_VISIBLE)) pw = GetParent(pw);
+                    TRACE("PUMPSTATE target hwnd %p vis %d rect %s items %u root %p rootvis %d paint %p paintvis %d\n",
+                            snap[j].hwnd, IsWindowVisible(snap[j].hwnd), wine_dbgstr_rect(&r),
+                            snap[j].count, root, root ? IsWindowVisible(root) : 0,
+                            pw, pw ? IsWindowVisible(pw) : 0);
+                }
+            }
         }
         free(snap);
 
-        Sleep(33);
+        /* Wake immediately when new content lands (EndDraw/Commit), fall
+         * back to a steady tick for swapchain content we cannot observe.
+         * The pump thread owns the overlay windows, so their messages are
+         * drained here too. */
+        if (MsgWaitForMultipleObjects(1, &pump_wake_event, FALSE, 16, QS_ALLINPUT) == WAIT_OBJECT_0 + 1)
+        {
+            MSG msg;
+            while (PeekMessageW(&msg, NULL, 0, 0, PM_REMOVE))
+            {
+                TranslateMessage(&msg);
+                DispatchMessageW(&msg);
+            }
+        }
     }
     return 0;
 }
 
 static void pump_ensure_thread(void)
 {
+    if (!pump_wake_event)
+        pump_wake_event = CreateEventW(NULL, FALSE, FALSE, NULL);
     if (!pump_thread)
         pump_thread = CreateThread(NULL, 0, pump_thread_proc, NULL, 0, NULL);
 }

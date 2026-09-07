@@ -217,4 +217,7 @@ HRESULT dxgi_resource_init(struct dxgi_resource *resource, IDXGIDevice *device,
         IUnknown *outer, BOOL needs_surface, struct wined3d_resource *wined3d_resource,
         IDXGIResource1 *parent_resource, unsigned int subresource_index);
 
+/* composition.c */
+HRESULT composition_swapchain_wrap(IDXGISwapChain1 *inner, HWND window, IDXGISwapChain1 **out);
+
 #endif /* __WINE_DXGI_PRIVATE_H */
